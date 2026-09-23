@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My Links</title>
-  <meta name="description" content="All my links in one place">
+  <meta name="description" content="Put all your links on one colourful page and see who taps them.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,7 @@
       border: 0; cursor: pointer;
       padding: 9px 18px; border-radius: 999px;
       font-weight: 600; font-size: .9rem;
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       transition: transform .12s, box-shadow .15s, background .15s, opacity .15s;
     }
     .btn:active { transform: scale(.97); }
@@ -46,6 +46,45 @@
     .btn.ghost { background: #f3f4f6; }
     .btn.ghost:hover { background: #e5e7eb; }
     .btn.danger { color: #fff; background: var(--red); }
+    .btn.big { padding: 13px 22px; font-size: .98rem; width: 100%; }
+    .link-btn {
+      border: 0; background: none; cursor: pointer;
+      color: var(--muted); font-size: .85rem;
+      padding: 2px 6px; border-radius: 6px;
+    }
+    .link-btn:hover { color: var(--violet); text-decoration: underline; }
+
+    /* ---------- Landing ---------- */
+    .landing { max-width: 1000px; margin: 0 auto; padding: 56px 16px 20px; }
+    .hero { text-align: center; }
+    .hero h1 {
+      font-size: clamp(2.2rem, 6.5vw, 3.4rem);
+      font-weight: 800; line-height: 1.15; letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #ec4899, #f97316, #8b5cf6, #3b82f6);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero .lead { color: var(--muted); font-size: 1.05rem; margin-top: 12px; line-height: 1.6; }
+    .auth-card {
+      max-width: 430px; margin: 32px auto 0;
+      border: 1px solid var(--line); border-radius: 22px; padding: 22px;
+      box-shadow: 0 20px 44px -30px rgba(0, 0, 0, .5);
+    }
+    .auth-card h2 { font-size: 1.15rem; font-weight: 700; }
+    .auth-card .sub { color: var(--muted); font-size: .85rem; margin: 4px 0 16px; }
+    .auth-form { display: grid; gap: 13px; }
+    .url-preview { font-size: .8rem; color: var(--muted); word-break: break-all; }
+    .url-preview b { color: #6d28d9; }
+    .auth-switch { text-align: center; margin-top: 14px; font-size: .88rem; color: var(--muted); }
+    .auth-switch button { border: 0; background: none; color: var(--violet); font-weight: 600; cursor: pointer; }
+    .form-error { color: var(--red); font-size: .85rem; }
+    .form-error:empty { display: none; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-top: 48px; }
+    .feature { border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+    .feature .emoji { font-size: 1.6rem; }
+    .feature h3 { font-size: .98rem; font-weight: 700; margin: 8px 0 4px; }
+    .feature p { font-size: .85rem; color: var(--muted); line-height: 1.55; }
+    .welcome { text-align: center; margin-top: 28px; display: grid; gap: 12px; justify-content: center; }
+    .welcome .btn { min-width: 220px; }
 
     /* ---------- Edit bar ---------- */
     .editbar {
@@ -64,24 +103,20 @@
 
     .wrap { max-width: 1240px; margin: 0 auto; padding: 48px 16px 32px; }
 
-    /* ---------- Header ---------- */
+    /* ---------- Page header ---------- */
     header { text-align: center; margin-bottom: 36px; }
     .title-box { display: inline-block; border-radius: 18px; padding: 4px 14px; }
     body.editing .title-box { cursor: pointer; outline: 2px dashed #d8b4fe; outline-offset: 4px; }
     body.editing .title-box:hover { background: #faf5ff; }
-    h1 {
+    h1.page-title {
       font-size: clamp(2.3rem, 7vw, 3.8rem);
-      font-weight: 800;
-      line-height: 1.15;
-      letter-spacing: -0.02em;
+      font-weight: 800; line-height: 1.15; letter-spacing: -0.02em;
       background: linear-gradient(90deg, #ec4899, #f97316, #8b5cf6, #3b82f6);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
     }
     .subtitle { color: var(--muted); margin-top: 6px; font-size: 1.05rem; }
 
-    .stats { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+    .pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
     .pill { font-size: .85rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; }
     .pill.pink { background: #fdf2f8; color: #db2777; }
     .pill.blue { background: #eff6ff; color: #2563eb; }
@@ -93,9 +128,7 @@
       padding: 14px 20px 14px 50px;
       border-radius: 999px;
       border: 2px solid var(--line);
-      font-size: 1rem;
-      background: #fff;
-      outline: none;
+      font-size: 1rem; background: #fff; outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
     .search input:focus { border-color: var(--violet); box-shadow: 0 0 0 5px rgba(139, 92, 246, .14); }
@@ -127,11 +160,7 @@
     }
     .col-head .icon { font-size: 1.35rem; }
     .col-head h2 { flex: 1; min-width: 0; font-size: 1.12rem; font-weight: 700; overflow-wrap: anywhere; }
-    .count {
-      background: rgba(255, 255, 255, .28);
-      font-size: .8rem; font-weight: 600;
-      padding: 2px 11px; border-radius: 999px;
-    }
+    .count { background: rgba(255, 255, 255, .28); font-size: .8rem; font-weight: 600; padding: 2px 11px; border-radius: 999px; }
     .head-actions { display: flex; gap: 2px; }
     .hbtn {
       width: 30px; height: 30px; border: 0; border-radius: 9px;
@@ -208,22 +237,21 @@
     .add-col:hover { background: #faf5ff; }
 
     .empty { text-align: center; color: var(--muted); padding: 40px 0; }
-    .loading { text-align: center; color: var(--muted); padding: 40px 0; }
+    .loading { text-align: center; color: var(--muted); padding: 60px 0; }
+    .notfound { text-align: center; padding: 70px 16px; display: grid; gap: 16px; justify-items: center; }
+    .notfound h2 { font-size: 1.4rem; font-weight: 700; }
+    .notfound p { color: var(--muted); }
 
-    footer { text-align: center; color: var(--muted); font-size: .88rem; padding: 36px 16px 90px; }
-
-    .link-btn {
-      border: 0; background: none; cursor: pointer;
-      color: var(--muted); font-size: .85rem;
-      padding: 2px 6px; border-radius: 6px;
-    }
-    .link-btn:hover { color: var(--violet); text-decoration: underline; }
+    footer { text-align: center; color: var(--muted); font-size: .88rem; padding: 36px 16px 90px; display: grid; gap: 6px; }
+    footer a { color: var(--violet); font-weight: 600; text-decoration: none; }
 
     .fab {
       position: fixed; right: 20px; bottom: 20px; z-index: 15;
       padding: 13px 22px; font-size: .95rem;
       box-shadow: 0 10px 24px -8px rgba(139, 92, 246, .7);
     }
+    .fab-stats { bottom: 78px; background: #fff; color: #6d28d9; box-shadow: 0 8px 22px -10px rgba(0, 0, 0, .3); }
+    .fab-stats:hover { background: #faf5ff; }
 
     .toast {
       position: fixed; left: 50%; bottom: 28px; z-index: 50;
@@ -241,10 +269,9 @@
 
     /* ---------- Dialog ---------- */
     dialog {
-      width: min(440px, calc(100% - 32px));
+      width: min(460px, calc(100% - 32px));
       margin: auto;
-      border: 0; border-radius: 22px;
-      padding: 0;
+      border: 0; border-radius: 22px; padding: 0;
       box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .35);
       color: var(--text);
     }
@@ -252,9 +279,7 @@
     dialog form { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
     dialog h3 { font-size: 1.2rem; font-weight: 700; }
     .intro { font-size: .9rem; color: #4b5563; line-height: 1.55; }
-    .intro ol { padding-left: 20px; display: grid; gap: 4px; margin-top: 6px; }
     .intro a { color: var(--violet); font-weight: 600; }
-    .intro code { background: #f3f4f6; padding: 1px 6px; border-radius: 6px; font-size: .85em; }
     .field { display: grid; gap: 6px; font-size: .85rem; font-weight: 600; color: #374151; }
     .field input, .field select {
       width: 100%;
@@ -270,9 +295,6 @@
     .dlg-actions { display: flex; flex-direction: row-reverse; gap: 8px; flex-wrap: wrap; }
 
     /* ---------- Stats ---------- */
-    .fab-stats { bottom: 78px; background: #fff; color: #6d28d9; box-shadow: 0 8px 22px -10px rgba(0, 0, 0, .3); }
-    .fab-stats:hover { background: #faf5ff; }
-
     .stats-panel { position: fixed; inset: 0; z-index: 25; background: #fff; overflow-y: auto; }
     .stats-top {
       position: sticky; top: 0; z-index: 2;
@@ -356,28 +378,86 @@
     .feed li { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; font-size: .86rem; }
     .feed li:last-child { border-bottom: 0; }
     .feed .when { color: var(--muted); white-space: nowrap; min-width: 78px; font-size: .8rem; }
+
+    .admin-list { display: grid; gap: 10px; max-height: 50vh; overflow-y: auto; }
+    .admin-row { display: flex; align-items: center; gap: 8px; }
+    .admin-row .who { flex: 1; min-width: 0; }
+    .admin-row a { color: var(--violet); font-weight: 600; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="rainbow-bar"></div>
 
+  <!-- ---------- edit bar (own page only) ---------- -->
   <div class="editbar" id="editbar" hidden>
     <span class="label">✏️ Edit mode</span>
     <span class="status" id="status">No changes</span>
     <span class="spacer"></span>
     <button class="btn ghost" id="btn-password" type="button">🔒 Password</button>
-    <button class="btn ghost" id="btn-token" type="button">🔑 Token</button>
     <button class="btn ghost" id="btn-cancel" type="button">Cancel</button>
     <button class="btn primary" id="btn-save" type="button">💾 Save</button>
   </div>
 
-  <div class="wrap">
+  <!-- ---------- landing ---------- -->
+  <main class="landing" id="landing" hidden>
+    <div class="hero">
+      <h1>All your links, one page</h1>
+      <p class="lead">Make a colourful page for everything you share — and see how many people opened it and what they tapped.</p>
+    </div>
+
+    <section class="auth-card" id="auth-card">
+      <h2 id="auth-title">Create your page</h2>
+      <p class="sub" id="auth-sub">Pick a username and a password. That's it.</p>
+      <form class="auth-form" id="auth-form">
+        <label class="field">
+          <span>Username</span>
+          <input id="auth-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        </label>
+        <p class="url-preview" id="auth-url" hidden></p>
+        <label class="field">
+          <span>Password</span>
+          <input id="auth-pass" name="password" type="password" autocomplete="new-password" required>
+        </label>
+        <p class="form-error" id="auth-error"></p>
+        <button class="btn primary big" id="auth-submit" type="submit">Create my page</button>
+      </form>
+      <p class="auth-switch" id="auth-switch"></p>
+    </section>
+
+    <div class="welcome" id="welcome" hidden></div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="emoji">🎨</div>
+        <h3>Colourful columns</h3>
+        <p>Group your links into columns like Social, Work or Study. Every column gets its own colour.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">✏️</div>
+        <h3>Edit on the page</h3>
+        <p>Add, edit, move or delete links right on your page. No code, no files.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">📊</div>
+        <h3>See who visits</h3>
+        <p>Page views, visitors, which links were tapped and which were not, countries and devices.</p>
+      </div>
+      <div class="feature">
+        <div class="emoji">🔗</div>
+        <h3>One link to share</h3>
+        <p>Share a single link in your bio and keep everything behind it up to date.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ---------- a links page ---------- -->
+  <div class="wrap" id="pageview" hidden>
     <header>
       <div class="title-box" id="title-box">
-        <h1 id="title">My Links</h1>
+        <h1 class="page-title" id="title">My Links</h1>
         <p class="subtitle" id="subtitle"></p>
       </div>
-      <div class="stats">
+      <div class="pills">
         <span class="pill pink" id="stat-links"></span>
         <span class="pill blue" id="stat-cols"></span>
       </div>
@@ -388,11 +468,18 @@
     </header>
 
     <main class="grid animate" id="grid"></main>
-    <p class="loading" id="loading">Loading links...</p>
     <p class="empty" id="empty" hidden>No links found 🙈</p>
   </div>
 
-  <footer>Made with 💜 · <button class="link-btn" id="btn-login" type="button">Login</button></footer>
+  <p class="loading" id="loading">Loading...</p>
+
+  <div class="notfound" id="notfound" hidden>
+    <h2>This page doesn't exist</h2>
+    <p id="notfound-text">Nobody has taken this username yet.</p>
+    <button class="btn primary" id="notfound-cta" type="button">Create this page</button>
+  </div>
+
+  <footer id="footer" hidden></footer>
 
   <button class="btn primary fab" id="fab" type="button" hidden>✏️ Edit</button>
   <button class="btn fab fab-stats" id="fab-stats" type="button" hidden>📊 Stats</button>
@@ -434,32 +521,28 @@
   </dialog>
 
   <script>
-    // GitHub repo the links are read from and saved to
     const CONFIG = {
-      owner: "annilinks",
-      repo: "annilinks.github.io",
-      branch: "main",
-      path: "links.json",
-      statsUrl: "https://annilinks-stats.mdanisahamad2003.workers.dev", // Cloudflare Worker that records visits and serves stats
+      // Cloudflare Worker: accounts, pages, visit tracking and stats
+      // (a local copy of the worker is used while testing from localhost)
+      api: /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+        ? "http://127.0.0.1:8791"
+        : "https://annilinks-stats.mdanisahamad2003.workers.dev",
+      site: location.origin + location.pathname.replace(/index\.html$/, ""),
     };
 
     const COLORS = ["#ec4899", "#f97316", "#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#06b6d4", "#ef4444"];
-    const TOKEN_KEY = "my-links-token";
-    const SESSION_KEY = "my-links-session";
-    const AUTH_PATH = "auth.json"; // login ID + password hash (never the password itself)
+    const SESSION_KEY = "links-session";
 
     const $ = id => document.getElementById(id);
     const grid = $("grid");
 
-    let data = null;      // links currently on screen (including unsaved edits)
-    let savedJson = "";   // last saved version, for the unsaved-changes check
-    let sha = null;       // GitHub file version
+    let session = null;    // { token, username, display }
+    let viewing = "";      // username of the page being shown ("" on the landing page)
+    let data = null;       // page being shown, including unsaved edits
+    let savedJson = "";
     let editing = false;
-    let memToken = null;
-    let auth = null;      // contents of auth.json
-    let authSha = null;
-    let loggedIn = false;
-    let memSession = null;
+    let isOwnPage = false;
+    let isSiteOwner = false;
 
     // ---------- helpers ----------
     const el = (tag, cls, text) => {
@@ -505,16 +588,8 @@
       return (u.host + u.pathname + u.search).replace(/^www\./, "").replace(/\/$/, "");
     }
 
-    function toBase64(str) {
-      const bytes = new TextEncoder().encode(str);
-      let bin = "";
-      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      return btoa(bin);
-    }
-    function fromBase64(b64) {
-      const bin = atob(b64.replace(/\s/g, ""));
-      return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
-    }
+    const pageUrl = name => CONFIG.site + "?u=" + name;
+    const shortUrl = name => pageUrl(name).replace(/^https?:\/\//, "");
 
     let toastTimer;
     function toast(msg, kind = "") {
@@ -525,78 +600,73 @@
       toastTimer = setTimeout(() => t.classList.remove("show"), kind === "bad" ? 4500 : 2600);
     }
 
-    // ---------- token ----------
-    function getToken() {
-      try { return localStorage.getItem(TOKEN_KEY) || memToken; } catch { return memToken; }
+    // ---------- session ----------
+    function loadSession() {
+      try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { session = null; }
+      if (session && !session.token) session = null;
     }
-    function setToken(t) {
-      memToken = t;
-      try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {}
-    }
-
-    function readSession() {
-      try { return localStorage.getItem(SESSION_KEY) || memSession; } catch { return memSession; }
-    }
-    function writeSession(v) {
-      memSession = v;
-      try { v ? localStorage.setItem(SESSION_KEY, v) : localStorage.removeItem(SESSION_KEY); } catch {}
+    function saveSession(s) {
+      session = s;
+      try { s ? localStorage.setItem(SESSION_KEY, JSON.stringify(s)) : localStorage.removeItem(SESSION_KEY); } catch {}
     }
 
-    async function hashPassword(password, salt, iterations) {
-      const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-      const bits = await crypto.subtle.deriveBits(
-        { name: "PBKDF2", hash: "SHA-256", salt: Uint8Array.from(atob(salt), c => c.charCodeAt(0)), iterations },
-        key, 256);
-      return btoa(String.fromCharCode(...new Uint8Array(bits)));
-    }
-
-    async function gh(path, opts = {}) {
-      const token = opts.token || getToken();
-      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}${path ? "/" + path : ""}`;
-      const res = await fetch(url, {
-        method: opts.method || "GET",
+    async function api(path, { method = "GET", body } = {}) {
+      const res = await fetch(CONFIG.api + path, {
+        method,
         cache: "no-store",
         headers: {
-          Accept: "application/vnd.github+json",
-          ...(token ? { Authorization: "Bearer " + token } : {}),
-          ...(opts.body ? { "Content-Type": "application/json" } : {}),
+          ...(body ? { "Content-Type": "application/json" } : {}),
+          ...(session ? { Authorization: "Bearer " + session.token } : {}),
         },
-        body: opts.body,
+        body: body ? JSON.stringify(body) : undefined,
       });
-      const body = await res.json().catch(() => ({}));
+      let out = {};
+      try { out = await res.json(); } catch {}
       if (!res.ok) {
-        const err = new Error(body.message || res.statusText);
+        const err = new Error(out.error || "Something went wrong. Please try again.");
         err.status = res.status;
         throw err;
       }
-      return body;
+      return out;
+    }
+
+    // A dead session shouldn't leave the Edit button sitting there.
+    function handleAuthError(e) {
+      if (e.status !== 401) return false;
+      saveSession(null);
+      isOwnPage = false;
+      isSiteOwner = false;
+      if (editing) { editing = false; data = normalize(JSON.parse(savedJson)); }
+      closeStats();
+      render();
+      renderFooter();
+      toast("You were logged out. Please log in again.", "bad");
+      return true;
     }
 
     // ---------- dialog ----------
-    // One dialog is reused for every form. `current` is the open form; stale close
-    // events from an earlier form are ignored because they can arrive late.
     const dlg = $("dlg"), dlgForm = $("dlg-form"), dlgErr = $("dlg-error"), dlgOk = $("dlg-ok");
     let current = null;
 
-    function finishForm(session, value) {
-      if (current !== session) return;
+    function finishForm(sess, value) {
+      if (current !== sess) return;
       current = null;
       if (dlg.open) dlg.close();
-      session.resolve(value);
+      sess.resolve(value);
     }
 
     dlgForm.addEventListener("submit", async e => {
       e.preventDefault();
-      const session = current;
-      if (!session) return;
-      if (e.submitter && e.submitter.value === "cancel") return finishForm(session, null);
-      const values = Object.fromEntries(Object.entries(session.inputs).map(([k, i]) => [k, i.value.trim()]));
+      const sess = current;
+      if (!sess) return;
+      if (e.submitter && e.submitter.value === "cancel") return finishForm(sess, null);
+      const values = Object.fromEntries(Object.entries(sess.inputs).map(([k, i]) => [k, i.value.trim()]));
       dlgOk.disabled = true;
       try {
-        const problem = session.onSubmit ? await session.onSubmit(values) : null;
-        if (current !== session) return;
+        const problem = sess.onSubmit ? await sess.onSubmit(values) : null;
+        if (current !== sess) return;
         if (problem) dlgErr.textContent = problem;
-        else finishForm(session, values);
+        else finishForm(sess, values);
       } finally {
         dlgOk.disabled = false;
       }
@@ -639,7 +709,6 @@
           body.append(label);
           inputs[f.name] = input;
         });
-
         current = { inputs, onSubmit, resolve };
         dlg.showModal();
         const first = Object.values(inputs)[0];
@@ -650,7 +719,7 @@
     const confirmBox = (title, text, okText = "Yes") =>
       openForm({ title, intro: text, okText, danger: true }).then(Boolean);
 
-    // ---------- data ----------
+    // ---------- page data ----------
     function normalize(d) {
       d = d && typeof d === "object" ? d : {};
       return {
@@ -665,65 +734,12 @@
       };
     }
 
-    // Reads a JSON file from the repo. With a token it asks GitHub directly (always
-    // fresh); otherwise it uses the published copy.
-    async function readJson(path) {
-      if (getToken()) {
-        try {
-          const r = await gh(`contents/${path}?ref=${CONFIG.branch}`);
-          return { json: JSON.parse(fromBase64(r.content)), sha: r.sha };
-        } catch (e) {
-          if (e.status === 401) { setToken(null); toast("Saved token no longer works, so it was removed", "bad"); }
-        }
-      }
-      const res = await fetch(path + "?v=" + Date.now(), { cache: "no-store" });
-      if (!res.ok) throw new Error(res.statusText);
-      return { json: await res.json(), sha: null };
-    }
-
-    // Commits a JSON file to the repo and returns its new sha.
-    async function writeJson(path, obj, knownSha, message) {
-      const content = toBase64(JSON.stringify(obj, null, 2) + "\n");
-      const latestSha = async () => (await gh(`contents/${path}?ref=${CONFIG.branch}`)).sha;
-      const put = fileSha => gh(`contents/${path}`, {
-        method: "PUT",
-        body: JSON.stringify({ message, content, sha: fileSha, branch: CONFIG.branch }),
-      });
-      try {
-        return (await put(knownSha || await latestSha())).content.sha;
-      } catch (e) {
-        if (e.status !== 409 && e.status !== 422) throw e;
-        return (await put(await latestSha())).content.sha;
-      }
-    }
-
-    async function load() {
-      try {
-        const [links, authFile] = await Promise.all([readJson(CONFIG.path), readJson(AUTH_PATH).catch(() => null)]);
-        data = normalize(links.json);
-        sha = links.sha;
-        if (authFile) { auth = authFile.json; authSha = authFile.sha; }
-      } catch {
-        $("loading").textContent = "Couldn't load links 😕 Try refreshing the page.";
-        return;
-      }
-      loggedIn = !!auth && readSession() === auth.hash;
-      savedJson = JSON.stringify(data);
-      $("loading").hidden = true;
-      render();
-      setTimeout(() => grid.classList.remove("animate"), 900);
-      track("view");
-    }
-
     const isDirty = () => data && JSON.stringify(data) !== savedJson;
-
-    function change(fn) {
-      fn();
-      render();
-    }
+    const change = fn => { fn(); render(); };
 
     // ---------- render ----------
     function render() {
+      if (!data) return;
       document.title = data.title;
       $("title").textContent = data.title;
       $("subtitle").textContent = data.subtitle;
@@ -732,9 +748,8 @@
 
       document.body.classList.toggle("editing", editing);
       $("editbar").hidden = !editing;
-      $("fab").hidden = editing || !loggedIn;
-      $("fab-stats").hidden = editing || !loggedIn;
-      $("btn-login").textContent = loggedIn ? "Logout" : "Login";
+      $("fab").hidden = editing || !isOwnPage;
+      $("fab-stats").hidden = editing || !isOwnPage;
       const dirty = isDirty();
       $("status").textContent = dirty ? "● Unsaved changes" : "No changes";
       $("status").classList.toggle("dirty", dirty);
@@ -837,8 +852,8 @@
       }
 
       grid.replaceChildren(frag);
-      $("stat-links").textContent = total + " links";
-      $("stat-cols").textContent = data.columns.length + " columns";
+      $("stat-links").textContent = total + (total === 1 ? " link" : " links");
+      $("stat-cols").textContent = data.columns.length + (data.columns.length === 1 ? " column" : " columns");
       filter($("q").value);
     }
 
@@ -868,7 +883,7 @@
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
 
-    // ---------- edit actions ----------
+    // ---------- editing ----------
     const linkFields = (link, ci) => [
       { name: "title", label: "Title", value: link.title, placeholder: "e.g. Instagram", required: true },
       { name: "url", label: "Link (URL)", value: link.url, placeholder: "https://...", inputmode: "url", required: true },
@@ -920,7 +935,9 @@
 
     async function deleteColumn(ci) {
       const col = data.columns[ci];
-      const text = col.links.length ? `"${col.name}" and its ${col.links.length} link${col.links.length === 1 ? "" : "s"} will be removed.` : `"${col.name}" will be removed.`;
+      const text = col.links.length
+        ? `"${col.name}" and its ${col.links.length} link${col.links.length === 1 ? "" : "s"} will be removed.`
+        : `"${col.name}" will be removed.`;
       if (await confirmBox("🗑️ Delete this column?", text, "Delete")) change(() => data.columns.splice(ci, 1));
     }
 
@@ -936,167 +953,8 @@
       if (v) change(() => { data.title = v.title; data.subtitle = v.subtitle; });
     }
 
-    // ---------- token + save ----------
-    function tokenIntro() {
-      const wrap = el("div");
-      wrap.append(el("p", null, "To save, you need a GitHub token (one time only). It is stored only in this browser on this device."));
-      const ol = el("ol");
-      const step1 = el("li");
-      const a = el("a", null, "Create a token here");
-      a.href = "https://github.com/settings/personal-access-tokens/new";
-      a.target = "_blank";
-      a.rel = "noopener";
-      step1.append(a);
-      const step2 = el("li");
-      step2.append("Resource owner: ", el("code", null, CONFIG.owner));
-      const step3 = el("li");
-      step3.append("Repository access → Only select → ", el("code", null, CONFIG.repo));
-      const step4 = el("li");
-      step4.append("Permissions → Contents → ", el("code", null, "Read and write"));
-      const step5 = el("li", null, "Click Generate token, then copy it and paste it below");
-      ol.append(step1, step2, step3, step4, step5);
-      wrap.append(ol);
-      return wrap;
-    }
-
-    async function askToken() {
-      const v = await openForm({
-        title: "🔑 GitHub token",
-        intro: tokenIntro(),
-        fields: [{ name: "token", label: "Token", type: "password", placeholder: "github_pat_...", required: true }],
-        okText: "Save token",
-        onSubmit: async ({ token }) => {
-          try {
-            await gh("", { token });
-            return null;
-          } catch (e) {
-            return e.status === 401 ? "That token is invalid. Copy it again and paste it here." : "Couldn't verify the token: " + e.message;
-          }
-        },
-      });
-      if (!v) return null;
-      setToken(v.token);
-      return v.token;
-    }
-
-    async function tokenMenu() {
-      if (!getToken()) {
-        if (await askToken()) toast("Token saved 🔑", "good");
-        return;
-      }
-      if (await confirmBox("🔑 Remove token?", "The GitHub token will be removed from this device. You'll be asked for it again the next time you save.", "Remove token")) {
-        setToken(null);
-        toast("Token removed");
-      }
-    }
-
-    async function save() {
-      if (!isDirty()) { setEditing(false); return; }
-      if (!getToken() && !(await askToken())) return;
-
-      const btn = $("btn-save");
-      btn.disabled = true;
-      btn.textContent = "Saving...";
-      try {
-        sha = await writeJson(CONFIG.path, data, sha, "Update links from website");
-        savedJson = JSON.stringify(data);
-        setEditing(false);
-        toast("Saved ✅ Everyone will see the update in 1–2 minutes", "good");
-      } catch (e) {
-        if (e.status === 401) {
-          setToken(null);
-          toast("Token is invalid or expired. Click Save again and enter a new token.", "bad");
-        } else if (e.status === 403 || e.status === 404) {
-          toast("This token can't write to the repo (it needs Contents: Read and write). Use the 🔑 Token button to add a new one.", "bad");
-        } else {
-          toast("Save failed: " + e.message, "bad");
-        }
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "💾 Save";
-      }
-    }
-
-    // ---------- login ----------
-    async function login() {
-      if (!auth) { toast("Login isn't set up yet", "bad"); return; }
-      const v = await openForm({
-        title: "🔒 Login",
-        fields: [
-          { name: "username", label: "ID", required: true, autocomplete: "username" },
-          { name: "password", label: "Password", type: "password", required: true, autocomplete: "current-password" },
-        ],
-        okText: "Login",
-        onSubmit: async ({ username, password }) => {
-          const ok = username.toLowerCase() === String(auth.username).toLowerCase()
-            && await hashPassword(password, auth.salt, auth.iterations) === auth.hash;
-          return ok ? null : "Wrong ID or password.";
-        },
-      });
-      if (!v) return;
-      writeSession(auth.hash);
-      loggedIn = true;
-      render();
-      toast("Logged in ✅ Click ✏️ Edit to change your links", "good");
-    }
-
-    async function logout() {
-      if (editing && isDirty() && !(await confirmBox("Discard changes?", "Your unsaved changes will be lost.", "Discard"))) return;
-      const v = await openForm({
-        title: "Log out?",
-        fields: [{
-          name: "token", label: "GitHub token on this device", value: "keep",
-          options: [
-            { value: "keep", label: "Keep it (my own device)" },
-            { value: "remove", label: "Remove it (shared device)" },
-          ],
-        }],
-        okText: "Log out",
-      });
-      if (!v) return;
-      if (v.token === "remove") setToken(null);
-      writeSession(null);
-      loggedIn = false;
-      if (editing) data = normalize(JSON.parse(savedJson));
-      editing = false;
-      closeStats();
-      render();
-      toast("Logged out");
-    }
-
-    async function changePassword() {
-      if (!getToken() && !(await askToken())) return;
-      const v = await openForm({
-        title: "🔒 Change password",
-        intro: "Pick a new login password (at least 8 characters).",
-        fields: [
-          { name: "password", label: "New password", type: "password", required: true, autocomplete: "new-password" },
-          { name: "confirm", label: "Type it again", type: "password", required: true, autocomplete: "new-password" },
-        ],
-        okText: "Change password",
-        onSubmit: async ({ password, confirm }) => {
-          if (password.length < 8) return "Use at least 8 characters.";
-          if (password !== confirm) return "The two passwords don't match.";
-          try {
-            const salt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
-            const next = { username: auth.username, salt, iterations: auth.iterations, hash: await hashPassword(password, salt, auth.iterations) };
-            authSha = await writeJson(AUTH_PATH, next, authSha, "Change login password");
-            auth = next;
-            return null;
-          } catch (e) {
-            return [401, 403, 404].includes(e.status)
-              ? "Your GitHub token can't save changes. Use 🔑 Token to add a new one."
-              : "Couldn't change the password: " + e.message;
-          }
-        },
-      });
-      if (!v) return;
-      writeSession(auth.hash);
-      toast("Password changed ✅", "good");
-    }
-
     function setEditing(on) {
-      if (on && !loggedIn) return;
+      if (on && !isOwnPage) return;
       editing = on;
       if (on) $("q").value = "";
       render();
@@ -1108,15 +966,207 @@
       setEditing(false);
     }
 
-    // ---------- tracking ----------
-    // Reports a page view, link tap or link copy. The owner's own activity is skipped.
-    function track(type, title, url) {
-      if (!CONFIG.statsUrl || loggedIn) return;
-      const body = JSON.stringify({ type, title, url, ref: document.referrer });
+    async function save() {
+      if (!isDirty()) { setEditing(false); return; }
+      const btn = $("btn-save");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
       try {
-        if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.statsUrl + "/track", new Blob([body], { type: "text/plain" }))) return;
+        const out = await api("/api/page", { method: "PUT", body: data });
+        data = normalize(out.page);
+        savedJson = JSON.stringify(data);
+        setEditing(false);
+        toast("Saved ✅ Your page is updated", "good");
+      } catch (e) {
+        if (!handleAuthError(e)) toast("Couldn't save: " + e.message, "bad");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 Save";
+      }
+    }
+
+    async function changePassword() {
+      const v = await openForm({
+        title: "🔒 Change password",
+        fields: [
+          { name: "current", label: "Current password", type: "password", required: true, autocomplete: "current-password" },
+          { name: "next", label: "New password", type: "password", required: true, autocomplete: "new-password" },
+          { name: "confirm", label: "Type the new one again", type: "password", required: true, autocomplete: "new-password" },
+        ],
+        okText: "Change password",
+        onSubmit: async ({ current, next, confirm }) => {
+          if (next.length < 8) return "New password must be at least 8 characters.";
+          if (next !== confirm) return "The two new passwords don't match.";
+          try {
+            await api("/api/password", { method: "POST", body: { current, next } });
+            return null;
+          } catch (e) {
+            return e.message;
+          }
+        },
+      });
+      if (v) toast("Password changed ✅ Other devices have been logged out", "good");
+    }
+
+    // ---------- landing, signup and login ----------
+    let authMode = "signup";
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const signup = mode === "signup";
+      $("auth-title").textContent = signup ? "Create your page" : "Log in";
+      $("auth-sub").textContent = signup ? "Pick a username and a password. That's it." : "Welcome back.";
+      $("auth-submit").textContent = signup ? "Create my page" : "Log in";
+      $("auth-pass").autocomplete = signup ? "new-password" : "current-password";
+      $("auth-error").textContent = "";
+      updateUrlPreview();
+      const p = el("p", null, signup ? "Already have a page? " : "New here? ");
+      const b = el("button", null, signup ? "Log in" : "Create a page");
+      b.type = "button";
+      b.addEventListener("click", () => setAuthMode(signup ? "login" : "signup"));
+      p.append(b);
+      $("auth-switch").replaceChildren(p);
+    }
+
+    function updateUrlPreview() {
+      const name = $("auth-user").value.trim().toLowerCase();
+      const box = $("auth-url");
+      box.hidden = !(name && authMode === "signup");
+      if (!box.hidden) box.replaceChildren(document.createTextNode("Your page will be "), el("b", null, shortUrl(name)));
+    }
+
+    async function submitAuth(e) {
+      e.preventDefault();
+      const username = $("auth-user").value.trim();
+      const password = $("auth-pass").value;
+      const btn = $("auth-submit");
+      const label = authMode === "signup" ? "Create my page" : "Log in";
+      $("auth-error").textContent = "";
+      btn.disabled = true;
+      btn.textContent = authMode === "signup" ? "Creating..." : "Logging in...";
+      try {
+        const out = await api(authMode === "signup" ? "/api/signup" : "/api/login", { method: "POST", body: { username, password } });
+        saveSession({ token: out.token, username: out.username, display: out.display });
+        location.href = pageUrl(out.username);
+      } catch (err) {
+        $("auth-error").textContent = err.message;
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    }
+
+    async function logout() {
+      if (editing && isDirty() && !(await confirmBox("Discard changes?", "Your unsaved changes will be lost.", "Discard"))) return;
+      try { await api("/api/logout", { method: "POST" }); } catch {}
+      saveSession(null);
+      location.href = CONFIG.site;
+    }
+
+    function showLanding(prefill) {
+      $("loading").hidden = true;
+      $("landing").hidden = false;
+      setAuthMode("signup");
+      if (prefill) {
+        $("auth-user").value = prefill;
+        updateUrlPreview();
+      }
+      if (session) {
+        const box = $("welcome");
+        const open = el("button", "btn primary", "Open my page");
+        open.type = "button";
+        open.addEventListener("click", () => { location.href = pageUrl(session.username); });
+        const out = el("button", "btn ghost", "Log out");
+        out.type = "button";
+        out.addEventListener("click", logout);
+        box.replaceChildren(el("p", null, "Logged in as " + (session.display || session.username)), open, out);
+        box.hidden = false;
+        $("auth-card").hidden = true;
+      }
+      renderFooter();
+    }
+
+    function renderFooter() {
+      const f = $("footer");
+      const line = el("div");
+      if (viewing && isOwnPage) {
+        line.append(document.createTextNode("Your page: "));
+        const a = el("a", null, shortUrl(viewing));
+        a.href = pageUrl(viewing);
+        line.append(a);
+      } else if (viewing) {
+        const a = el("a", null, "Make your own links page");
+        a.href = CONFIG.site;
+        line.append(a);
+      } else {
+        line.append(el("span", null, "Made with 💜"));
+      }
+
+      const actions = el("div");
+      if (session) {
+        actions.append(el("span", "muted small", (session.display || session.username) + " · "));
+        const out = el("button", "link-btn", "Log out");
+        out.type = "button";
+        out.addEventListener("click", logout);
+        actions.append(out);
+        if (isSiteOwner) {
+          const admin = el("button", "link-btn", "Admin");
+          admin.type = "button";
+          admin.addEventListener("click", showAdmin);
+          actions.append(admin);
+        }
+      } else if (viewing) {
+        const login = el("button", "link-btn", "Log in");
+        login.type = "button";
+        login.addEventListener("click", () => { location.href = CONFIG.site + "?login=1"; });
+        actions.append(login);
+      }
+      f.replaceChildren(line, actions);
+      f.hidden = false;
+    }
+
+    // Site owner only: see every account and turn one off.
+    async function showAdmin() {
+      let out;
+      try { out = await api("/api/admin/users"); }
+      catch (e) { if (!handleAuthError(e)) toast(e.message, "bad"); return; }
+
+      const box = el("div", "admin-list");
+      out.users.forEach(u => {
+        const row = el("div", "admin-row");
+        const who = el("div", "who");
+        const link = el("a", null, u.username);
+        link.href = pageUrl(u.username);
+        link.target = "_blank";
+        link.rel = "noopener";
+        const joined = new Date(u.created).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+        who.append(link, el("div", "muted small", `${u.views} views · ${u.clicks} taps · joined ${joined}${u.disabled ? " · turned off" : ""}`));
+        const btn = el("button", "btn " + (u.disabled ? "ghost" : "danger"), u.disabled ? "Turn on" : "Turn off");
+        btn.type = "button";
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          try {
+            await api("/api/admin/disable", { method: "POST", body: { username: u.username, disabled: !u.disabled } });
+            u.disabled = !u.disabled;
+            btn.textContent = u.disabled ? "Turn on" : "Turn off";
+            btn.className = "btn " + (u.disabled ? "ghost" : "danger");
+          } catch (e) { toast(e.message, "bad"); }
+          btn.disabled = false;
+        });
+        row.append(who, btn);
+        box.append(row);
+      });
+      if (!out.users.length) box.append(el("p", "muted", "No accounts yet."));
+      openForm({ title: `👥 ${out.users.length} account${out.users.length === 1 ? "" : "s"}`, intro: box, okText: "Done" });
+    }
+
+    // ---------- tracking ----------
+    function track(type, title, url) {
+      if (!viewing || isOwnPage) return; // your own visits aren't counted
+      const body = JSON.stringify({ type, page: viewing, title, url, ref: document.referrer });
+      try {
+        if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.api + "/track", new Blob([body], { type: "text/plain" }))) return;
       } catch {}
-      fetch(CONFIG.statsUrl + "/track", { method: "POST", body, keepalive: true, headers: { "Content-Type": "text/plain" } }).catch(() => {});
+      fetch(CONFIG.api + "/track", { method: "POST", body, keepalive: true, headers: { "Content-Type": "text/plain" } }).catch(() => {});
     }
 
     // ---------- stats ----------
@@ -1151,7 +1201,7 @@
     }
 
     function openStats() {
-      if (!loggedIn) return;
+      if (!isOwnPage) return;
       $("stats").hidden = false;
       document.body.style.overflow = "hidden";
       $("stats").scrollTop = 0;
@@ -1166,31 +1216,13 @@
     async function loadStats() {
       if (statsBusy) return;
       const box = $("stats-content");
-      if (!getToken()) {
-        if (!box.childElementCount) box.append(el("p", "empty-state", "Stats need your GitHub token once on this device."));
-        if (!(await askToken())) { closeStats(); return; }
-      }
       statsBusy = true;
       box.classList.add("busy");
       if (!box.childElementCount) box.append(el("p", "empty-state", "Loading stats..."));
       try {
-        const res = await fetch(`${CONFIG.statsUrl}/stats?days=${statsDays}&tz=${new Date().getTimezoneOffset()}`, {
-          headers: { Authorization: "Bearer " + getToken() },
-          cache: "no-store",
-        });
-        if (res.status === 401) {
-          const msg = el("div", "empty-state");
-          const again = el("button", "btn primary", "Enter a new token");
-          again.type = "button";
-          again.addEventListener("click", async () => { if (await askToken()) loadStats(); });
-          msg.append(el("p", null, "Your GitHub token wasn't accepted for stats."), el("br"), again);
-          box.replaceChildren(msg);
-          return;
-        }
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        renderStats(await res.json());
+        renderStats(await api(`/api/stats?days=${statsDays}&tz=${new Date().getTimezoneOffset()}`));
       } catch (e) {
-        box.replaceChildren(el("p", "empty-state", "Couldn't load stats 😕 (" + e.message + ")"));
+        if (!handleAuthError(e)) box.replaceChildren(el("p", "empty-state", "Couldn't load stats 😕 (" + e.message + ")"));
       } finally {
         box.classList.remove("busy");
         statsBusy = false;
@@ -1494,14 +1526,65 @@
       return c;
     }
 
+    // ---------- boot ----------
+    async function boot() {
+      loadSession();
+      const params = new URLSearchParams(location.search);
+      viewing = (params.get("u") || "").trim().toLowerCase();
+
+      if (!viewing) {
+        showLanding((params.get("new") || "").trim().toLowerCase());
+        if (params.get("login") === "1" && !session) setAuthMode("login");
+        return;
+      }
+
+      isOwnPage = !!session && session.username === viewing;
+      try {
+        let out;
+        if (isOwnPage) {
+          out = await api("/api/me");
+          isSiteOwner = !!out.owner;
+          saveSession({ ...session, display: out.display });
+        } else {
+          out = await api("/api/page?u=" + encodeURIComponent(viewing));
+        }
+        data = normalize(out.page);
+        savedJson = JSON.stringify(data);
+        $("loading").hidden = true;
+        $("pageview").hidden = false;
+        render();
+        renderFooter();
+        setTimeout(() => grid.classList.remove("animate"), 900);
+        track("view");
+      } catch (e) {
+        $("loading").hidden = true;
+        if (e.status === 401 && isOwnPage) {
+          saveSession(null);
+          isOwnPage = false;
+          location.reload();
+          return;
+        }
+        if (e.status === 404) {
+          $("notfound").hidden = false;
+          $("notfound-text").textContent = `Nobody has taken "${viewing}" yet.`;
+          $("notfound-cta").addEventListener("click", () => { location.href = CONFIG.site + "?new=" + encodeURIComponent(viewing); });
+        } else {
+          $("loading").hidden = false;
+          $("loading").textContent = "Couldn't load this page 😕 Please try again in a moment.";
+        }
+        renderFooter();
+      }
+    }
+
     // ---------- events ----------
     $("q").addEventListener("input", e => filter(e.target.value));
     $("fab").addEventListener("click", () => data && setEditing(true));
     $("btn-cancel").addEventListener("click", cancelEdit);
     $("btn-save").addEventListener("click", save);
-    $("btn-token").addEventListener("click", tokenMenu);
     $("btn-password").addEventListener("click", changePassword);
-    $("btn-login").addEventListener("click", () => (loggedIn ? logout() : login()));
+    $("title-box").addEventListener("click", () => editing && editHeader());
+    $("auth-form").addEventListener("submit", submitAuth);
+    $("auth-user").addEventListener("input", updateUrlPreview);
     $("fab-stats").addEventListener("click", openStats);
     $("stats-close").addEventListener("click", closeStats);
     $("stats-refresh").addEventListener("click", loadStats);
@@ -1512,6 +1595,7 @@
       $("ranges").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
       loadStats();
     });
+
     // The chart is drawn for the current width, so redraw it when the width changes (e.g. phone rotation).
     let statsWidth = innerWidth, resizeTimer;
     window.addEventListener("resize", () => {
@@ -1526,14 +1610,13 @@
       }, 200);
     });
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !$("stats").hidden && !$("dlg").open) closeStats();
+      if (e.key === "Escape" && !$("stats").hidden && !dlg.open) closeStats();
     });
-    $("title-box").addEventListener("click", () => editing && editHeader());
     window.addEventListener("beforeunload", e => {
       if (editing && isDirty()) { e.preventDefault(); e.returnValue = ""; }
     });
 
-    load();
+    boot();
   </script>
 </body>
 </html>

@@ -1,47 +1,31 @@
-# 🔗 My Links
+# 🔗 Links pages for everyone
 
-All my links in one place — colorful, column-wise, and editable right on the website.
+A colourful links page anyone can create: pick a username, add your links in
+columns, share one address, and see who opened it and what they tapped.
 
-**Live:** https://annilinks.github.io/
+**Live:** https://annilinks.github.io/ · every page lives at `?u=username`
 
-## Editing links on the website
+## How it works
 
-Visitors only see the links. Editing is only for you:
+- `index.html` — the whole site: landing page, signup and login, a links page,
+  the editor and the stats screen. Nothing else to build or install.
+- `stats-worker/` — a Cloudflare Worker with a D1 database that stores accounts,
+  each page and every visit. Deploy it with `cd stats-worker && npx wrangler deploy`.
+- `links.json` / `auth.json` — the old single-user setup, kept only as a backup.
+  They are no longer used by the site.
 
-1. Click **Login** at the bottom of the page and sign in.
-2. Click **✏️ Edit** (bottom-right).
-3. Add, edit, move or delete links and columns. Click the title to change the title and subtitle.
-4. Click **💾 Save**. Everyone sees the update in 1–2 minutes.
+## For a visitor
 
-To change the login password, use **🔒 Password** in edit mode.
-The login is stored in [`auth.json`](auth.json) as a salted hash, never the password itself.
+1. Open the site and pick a username and password.
+2. Click **✏️ Edit** on your page to add links and columns, then **💾 Save**.
+3. Share `https://annilinks.github.io/?u=yourname`.
+4. Click **📊 Stats** to see page views, visitors by IP, which links were tapped
+   and which were not, sources, countries and devices.
 
-The first time you save, the site asks for a GitHub token. It is stored only in that browser.
+Passwords are stored as PBKDF2-SHA256 hashes, never in plain text. Login sessions
+last 90 days and only a hash of each session token is stored.
 
-**Creating the token (one time):**
+## For the site owner
 
-1. Go to https://github.com/settings/personal-access-tokens/new
-2. Resource owner: `annilinks`
-3. Repository access → Only select repositories → `annilinks.github.io`
-4. Permissions → Contents → **Read and write**
-5. Generate the token and paste it into the website
-
-Visitors without a token can't save anything.
-
-## Stats
-
-After logging in, click **📊 Stats** (bottom-right) to see:
-
-- page views, visitors (by IP address) and link taps for today, the last 7 or 30 days, or all time
-- taps and copies for every link, including links nobody has tapped
-- each visitor IP with how many times it visited, what it tapped, location and device
-- where visitors came from, countries, devices, browsers and recent activity
-
-Your own visits aren't counted while you're logged in. Stats also need the GitHub token on that device.
-
-Visits are recorded by a small Cloudflare Worker with a D1 database. Its code is in [`stats-worker/`](stats-worker/).
-To redeploy it: `cd stats-worker && npx wrangler deploy`.
-
-## Where the links live
-
-All links are stored in [`links.json`](links.json). You can also edit that file directly on GitHub.
+The account named in the worker's `OWNERS` variable sees an **Admin** link in the
+footer: every account, its views and taps, and a switch to turn an account off.
