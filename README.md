@@ -1,6 +1,6 @@
-# 🔗 Links pages for everyone
+# 🔗 Linkboard
 
-A colourful links page anyone can create: pick a username, add your links in
+Linkboard is a colourful links page anyone can create: pick a username, add your links in
 columns, share one address, and see who opened it and what they tapped.
 
 **Live:** https://annilinks.github.io/ · every page lives at `?u=username`

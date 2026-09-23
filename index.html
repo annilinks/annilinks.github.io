@@ -3,8 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Links</title>
-  <meta name="description" content="Put all your links on one colourful page and see who taps them.">
+  <title>Linkboard — all your links on one colourful page</title>
+  <meta name="description" content="Make a free links page: put every link you share in one colourful place, share a single address, and see how many people opened it and what they tapped.">
+  <link rel="canonical" id="canonical" href="https://annilinks.github.io/">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Linkboard">
+  <meta property="og:title" id="og-title" content="Linkboard — all your links on one colourful page">
+  <meta property="og:description" id="og-desc" content="Linkboard: a free links page with colourful columns, one address for everything you share, and visitor stats.">
+  <meta property="og:url" id="og-url" content="https://annilinks.github.io/">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,7 +63,17 @@
     .link-btn:hover { color: var(--violet); text-decoration: underline; }
 
     /* ---------- Landing ---------- */
-    .landing { max-width: 1000px; margin: 0 auto; padding: 56px 16px 20px; }
+    .landing { max-width: 1000px; margin: 0 auto; padding: 40px 16px 20px; }
+    .brand {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-weight: 800; font-size: 1.1rem; letter-spacing: -0.01em;
+      margin-bottom: 26px;
+    }
+    .brand .dot {
+      width: 26px; height: 26px; border-radius: 9px;
+      display: grid; place-items: center; font-size: .95rem;
+      background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff;
+    }
     .hero { text-align: center; }
     .hero h1 {
       font-size: clamp(2.2rem, 6.5vw, 3.4rem);
@@ -400,9 +418,10 @@
 
   <!-- ---------- landing ---------- -->
   <main class="landing" id="landing" hidden>
+    <div class="brand"><span class="dot">🔗</span>Linkboard</div>
     <div class="hero">
       <h1>All your links, one page</h1>
-      <p class="lead">Make a colourful page for everything you share — and see how many people opened it and what they tapped.</p>
+      <p class="lead">Linkboard gives you one colourful page for everything you share — and shows you how many people opened it and what they tapped.</p>
     </div>
 
     <section class="auth-card" id="auth-card">
@@ -738,9 +757,24 @@
     const change = fn => { fn(); render(); };
 
     // ---------- render ----------
+    // Search engines and link previews read these, so keep them in step with the page.
+    function setMeta(title, description, url) {
+      document.title = title;
+      const desc = document.querySelector('meta[name="description"]');
+      if (desc) desc.content = description;
+      $("canonical").href = url;
+      $("og-title").content = title;
+      $("og-desc").content = description;
+      $("og-url").content = url;
+    }
+
     function render() {
       if (!data) return;
-      document.title = data.title;
+      setMeta(
+        data.title + (viewing ? " · " + viewing : "") + " · Linkboard",
+        data.subtitle || `${data.title} — every link ${viewing} shares, in one place.`,
+        viewing ? pageUrl(viewing) : CONFIG.site,
+      );
       $("title").textContent = data.title;
       $("subtitle").textContent = data.subtitle;
       $("subtitle").hidden = !data.subtitle && !editing;
@@ -1094,11 +1128,11 @@
         a.href = pageUrl(viewing);
         line.append(a);
       } else if (viewing) {
-        const a = el("a", null, "Make your own links page");
+        const a = el("a", null, "Make your own Linkboard page");
         a.href = CONFIG.site;
         line.append(a);
       } else {
-        line.append(el("span", null, "Made with 💜"));
+        line.append(el("span", null, "Linkboard · made with 💜"));
       }
 
       const actions = el("div");
