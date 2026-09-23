@@ -176,10 +176,12 @@ function cleanPage(input) {
     columns: columns.map(c => ({
       name: str(c && c.name, 60) || "Column",
       icon: str(c && c.icon, 12) || "🔗",
-      links: (Array.isArray(c && c.links) ? c.links : []).slice(0, 100).map(l => ({
-        title: str(l && l.title, 120) || "Link",
-        url: safeUrl(l && l.url),
-      })).filter(l => l.url),
+      links: (Array.isArray(c && c.links) ? c.links : []).slice(0, 100).map(l => {
+        const link = { title: str(l && l.title, 120) || "Link", url: safeUrl(l && l.url) };
+        const description = str(l && l.description, 200).trim();
+        if (description) link.description = description;
+        return link;
+      }).filter(l => l.url),
     })),
   };
   return { page };

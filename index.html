@@ -220,6 +220,11 @@
     .badge.has-img { background: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 25%, #fff); }
     .meta { min-width: 0; }
     .t { font-weight: 600; font-size: .96rem; line-height: 1.3; overflow-wrap: anywhere; }
+    .d {
+      font-size: .8rem; color: #4b5563; line-height: 1.4; margin-top: 1px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      overflow-wrap: anywhere;
+    }
     .u { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .row-actions { display: flex; gap: 2px; padding-right: 6px; flex-shrink: 0; }
@@ -719,6 +724,7 @@
             input.type = f.type || "text";
             input.placeholder = f.placeholder || "";
             if (f.inputmode) input.inputMode = f.inputmode;
+            if (f.maxlength) input.maxLength = f.maxlength;
             input.autocomplete = f.autocomplete || "off";
             input.spellcheck = false;
           }
@@ -748,7 +754,11 @@
           name: String(c.name || "Column"),
           icon: String(c.icon || "🔗"),
           ...(c.color ? { color: String(c.color) } : {}),
-          links: (Array.isArray(c.links) ? c.links : []).map(l => ({ title: String(l.title || ""), url: String(l.url || "") })),
+          links: (Array.isArray(c.links) ? c.links : []).map(l => ({
+            title: String(l.title || ""),
+            url: String(l.url || ""),
+            description: String(l.description || "").slice(0, 200),
+          })),
         })),
       };
     }
@@ -819,7 +829,7 @@
           total++;
 
           const row = el("li");
-          row.dataset.search = (link.title + " " + link.url + " " + col.name).toLowerCase();
+          row.dataset.search = (link.title + " " + link.description + " " + link.url + " " + col.name).toLowerCase();
 
           const main = el(editing ? "button" : "a", "item");
           if (editing) {
@@ -845,7 +855,9 @@
             badge.append(img);
           }
           const meta = el("span", "meta");
-          meta.append(el("div", "t", link.title || "(untitled)"), el("div", "u", u ? prettyUrl(u) : "⚠️ invalid link"));
+          meta.append(el("div", "t", link.title || "(untitled)"));
+          if (link.description) meta.append(el("div", "d", link.description));
+          meta.append(el("div", "u", u ? prettyUrl(u) : "⚠️ invalid link"));
           main.append(badge, meta);
 
           const acts = el("div", "row-actions");
@@ -921,6 +933,7 @@
     const linkFields = (link, ci) => [
       { name: "title", label: "Title", value: link.title, placeholder: "e.g. Instagram", required: true },
       { name: "url", label: "Link (URL)", value: link.url, placeholder: "https://...", inputmode: "url", required: true },
+      { name: "description", label: "Description (optional)", value: link.description, placeholder: "One line about this link", maxlength: 200 },
       { name: "col", label: "Column", value: String(ci), options: data.columns.map((c, i) => ({ value: String(i), label: `${c.icon} ${c.name}` })) },
     ];
     const checkUrl = v => (safeUrl(v.url) ? null : "That doesn't look like a valid link, e.g. https://instagram.com/username");
@@ -928,7 +941,7 @@
     async function addLink(ci) {
       const v = await openForm({ title: "➕ New link", fields: linkFields({ title: "", url: "" }, ci), okText: "Add", onSubmit: checkUrl });
       if (!v) return;
-      change(() => data.columns[+v.col].links.push({ title: v.title, url: safeUrl(v.url).href }));
+      change(() => data.columns[+v.col].links.push({ title: v.title, url: safeUrl(v.url).href, description: v.description }));
     }
 
     async function editLink(ci, li) {
@@ -936,7 +949,7 @@
       const v = await openForm({ title: "✏️ Edit link", fields: linkFields(link, ci), okText: "Update", onSubmit: checkUrl });
       if (!v) return;
       change(() => {
-        const updated = { title: v.title, url: safeUrl(v.url).href };
+        const updated = { title: v.title, url: safeUrl(v.url).href, description: v.description };
         if (+v.col === ci) data.columns[ci].links[li] = updated;
         else { data.columns[ci].links.splice(li, 1); data.columns[+v.col].links.push(updated); }
       });
