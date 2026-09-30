@@ -57,7 +57,11 @@ details there before taking payments.
 
 ## Forgotten passwords
 
-There is no email in the loop, so recovery works two ways:
+No email is involved. Recovery works three ways:
+
+- **A code on Telegram.** An owner connects their page to the bot (**✈️ Telegram** in edit mode),
+  which stores that chat. "Forgot your password?" then sends a six-digit code to that chat; the code
+  lasts 15 minutes and works once. The bot also sends a note whenever a password is changed this way.
 
 - **Recovery code.** Every new account is shown one code (`LB-XXXX-XXXX-XXXX-XXXX`) at signup.
   "Forgot your password?" on the login screen takes the username plus that code and sets a new
@@ -65,6 +69,22 @@ There is no email in the loop, so recovery works two ways:
   A logged-in owner can make a new code any time with **🆘 Recovery code** in edit mode.
 - **Owner reset.** In the Admin list the site owner can reset any account's password; the temporary
   password is shown once, to be passed on privately. That account is logged out everywhere.
+
+### Switching the bot on
+
+```
+npx wrangler secret put TELEGRAM_BOT_TOKEN      # from @BotFather
+npx wrangler secret put TELEGRAM_WEBHOOK_SECRET # any long random string you pick
+```
+
+Then point Telegram at the worker (run it with your own token and the same secret):
+
+```
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<your-worker>/telegram/webhook&secret_token=<SECRET>"
+```
+
+The bot's public name lives in `wrangler.toml` as `TELEGRAM_BOT`. Without the token the site simply
+falls back to recovery codes.
 
 Codes are stored the same way as passwords — PBKDF2-SHA256 of the code, never the code itself —
 and reset attempts share the login rate limit.

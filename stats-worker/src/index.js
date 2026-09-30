@@ -10,6 +10,11 @@
 //   POST /api/recovery         (session)                     -> a fresh recovery code
 //   POST /api/reset            { username, code, password }   -> new password from a recovery code
 //   POST /api/admin/reset      (owner session) { username }   -> a temporary password
+//   POST /api/telegram/link    (session)                     -> a one-time link to the bot
+//   POST /api/telegram/unlink  (session)
+//   POST /api/forgot           { username }                  -> sends a code to a linked Telegram
+//   POST /api/reset-code       { username, code, password }
+//   POST /telegram/webhook     (Telegram) bot updates
 //   GET  /api/stats?days&tz    (session)                     -> stats for the caller's page
 //   GET  /api/admin/users      (owner session)               -> all accounts
 //   POST /api/admin/disable    (owner session) { username, disabled }
@@ -66,6 +71,11 @@ export default {
       if (path === "/api/recovery" && method === "POST") return await newRecoveryCode(request, env, cors);
       if (path === "/api/reset" && method === "POST") return await resetWithCode(request, env, cors);
       if (path === "/api/admin/reset" && method === "POST") return await adminReset(request, env, cors);
+      if (path === "/api/telegram/link" && method === "POST") return await telegramLink(request, env, cors);
+      if (path === "/api/telegram/unlink" && method === "POST") return await telegramUnlink(request, env, cors);
+      if (path === "/api/forgot" && method === "POST") return await sendResetCode(request, env, cors);
+      if (path === "/api/reset-code" && method === "POST") return await resetWithSentCode(request, env, cors);
+      if (path === "/telegram/webhook" && method === "POST") return await telegramWebhook(request, env, cors);
       if (path === "/api/stats" && method === "GET") return await stats(request, env, cors, url);
       if (path === "/api/admin/users" && method === "GET") return await adminUsers(request, env, cors);
       if (path === "/api/admin/disable" && method === "POST") return await adminDisable(request, env, cors);
@@ -144,7 +154,7 @@ async function me(request, env, cors) {
   if (!user) return json({ error: "Not logged in" }, 401, cors);
   return json({
     username: user.username, display: user.display, page: JSON.parse(user.page),
-    owner: isOwner(env, user.username), ...accountInfo(user),
+    owner: isOwner(env, user.username), telegram: telegramInfo(user), ...accountInfo(user),
   }, 200, cors);
 }
 
@@ -248,6 +258,154 @@ async function adminReset(request, env, cors) {
   const password = makePassword();
   await setPassword(env, target, password);
   return json({ ok: true, username: target, password }, 200, cors);
+}
+
+// ---------- Telegram ----------
+// An account can be tied to one Telegram chat; that chat is where reset codes go.
+
+const RESET_CODE_MINUTES = 15;
+const LINK_MINUTES = 15;
+
+function telegramInfo(user) {
+  return { connected: !!user.tg_chat_id, name: user.tg_name || null };
+}
+
+async function telegram(env, method, payload) {
+  if (!env.TELEGRAM_BOT_TOKEN) return { ok: false, offline: true };
+  const res = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!out.ok) console.error("telegram " + method, res.status, out.description);
+  return out;
+}
+
+async function telegramLink(request, env, cors) {
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: "Not logged in" }, 401, cors);
+  if (!env.TELEGRAM_BOT) return json({ error: "Telegram isn't switched on yet." }, 503, cors);
+  const code = makeRecoveryCode().replace(/-/g, "").slice(0, 12);
+  await env.DB.prepare("UPDATE users SET link_code = ?2, link_expires = ?3 WHERE username = ?1")
+    .bind(user.username, code, Date.now() + LINK_MINUTES * 60000).run();
+  return json({
+    url: `https://t.me/${env.TELEGRAM_BOT}?start=${code}`,
+    bot: env.TELEGRAM_BOT,
+    minutes: LINK_MINUTES,
+  }, 200, cors);
+}
+
+async function telegramUnlink(request, env, cors) {
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: "Not logged in" }, 401, cors);
+  await env.DB.prepare("UPDATE users SET tg_chat_id = NULL, tg_name = NULL WHERE username = ?1")
+    .bind(user.username).run();
+  return json({ ok: true }, 200, cors);
+}
+
+async function telegramWebhook(request, env, cors) {
+  if (!env.TELEGRAM_WEBHOOK_SECRET ||
+      request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.TELEGRAM_WEBHOOK_SECRET) {
+    return json({ error: "Bad secret" }, 401, cors);
+  }
+  const update = await body(request);
+  const message = update.message || update.edited_message;
+  const chatId = message && message.chat && message.chat.id;
+  const text = ((message && message.text) || "").trim();
+  if (!chatId) return json({ ok: true }, 200, cors);
+
+  const start = text.match(/^\/start(?:\s+(\S+))?$/i);
+  if (start && start[1]) {
+    const code = start[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const user = await env.DB.prepare(
+      "SELECT username FROM users WHERE link_code = ?1 AND link_expires > ?2"
+    ).bind(code, Date.now()).first();
+    if (!user) {
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "That link has expired. Open your Linkboard page, click ✏️ Edit and then ✈️ Telegram to get a fresh one." });
+      return json({ ok: true }, 200, cors);
+    }
+    const name = [message.chat.first_name, message.chat.last_name].filter(Boolean).join(" ")
+      || (message.chat.username ? "@" + message.chat.username : "");
+    await env.DB.prepare(
+      "UPDATE users SET tg_chat_id = ?2, tg_name = ?3, link_code = NULL, link_expires = NULL WHERE username = ?1"
+    ).bind(user.username, String(chatId), clip(name, 80)).run();
+    await telegram(env, "sendMessage", {
+      chat_id: chatId,
+      text: `✅ Connected to @${user.username}.\n\nIf you ever forget your password, choose "Send a code to my Telegram" on the login screen and the code will arrive here.`,
+    });
+    return json({ ok: true }, 200, cors);
+  }
+
+  await telegram(env, "sendMessage", {
+    chat_id: chatId,
+    text: "Hi! I send password reset codes for Linkboard pages.\n\nTo connect your page: open it, click ✏️ Edit, then ✈️ Telegram, and tap the link it gives you.",
+  });
+  return json({ ok: true }, 200, cors);
+}
+
+function makeSixDigits() {
+  return String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, "0");
+}
+
+async function sendResetCode(request, env, cors) {
+  const ip = clientIp(request);
+  if (await tooManyAttempts(env, ip)) {
+    return json({ error: "Too many tries. Please wait a few minutes." }, 429, cors);
+  }
+  const { username = "" } = await body(request);
+  const uname = String(username).trim().toLowerCase();
+  const user = await env.DB.prepare("SELECT * FROM users WHERE username = ?1").bind(uname).first();
+  if (!user || !user.tg_chat_id) {
+    await env.DB.prepare("INSERT INTO attempts (ip, ts) VALUES (?1, ?2)").bind(ip, Date.now()).run();
+    return json({ sent: false, reason: "no-telegram" }, 200, cors);
+  }
+  if (user.disabled) return json({ error: "This account has been turned off." }, 403, cors);
+
+  const code = makeSixDigits();
+  const salt = randomB64(16);
+  const hash = await hashPassword(code, salt, ITERATIONS);
+  await env.DB.prepare(
+    "UPDATE users SET reset_salt = ?2, reset_hash = ?3, reset_expires = ?4 WHERE username = ?1"
+  ).bind(uname, salt, hash, Date.now() + RESET_CODE_MINUTES * 60000).run();
+
+  const out = await telegram(env, "sendMessage", {
+    chat_id: user.tg_chat_id,
+    text: `🔑 Your Linkboard reset code is ${code}\n\nIt works for ${RESET_CODE_MINUTES} minutes and only for @${uname}. If this wasn't you, ignore this message — nothing has changed.`,
+  });
+  if (!out.ok) return json({ error: "Couldn't send the code. Please try again." }, 502, cors);
+  return json({ sent: true, via: "telegram", minutes: RESET_CODE_MINUTES }, 200, cors);
+}
+
+async function resetWithSentCode(request, env, cors) {
+  const ip = clientIp(request);
+  if (await tooManyAttempts(env, ip)) {
+    return json({ error: "Too many wrong tries. Please wait a few minutes." }, 429, cors);
+  }
+  const { username = "", code = "", password = "" } = await body(request);
+  if (String(password).length < 8) return json({ error: "New password must be at least 8 characters." }, 400, cors);
+  const uname = String(username).trim().toLowerCase();
+  const user = await env.DB.prepare("SELECT * FROM users WHERE username = ?1").bind(uname).first();
+  const given = String(code).replace(/\D/g, "");
+  let ok = false;
+  if (user && user.reset_hash && (user.reset_expires || 0) > Date.now() && given.length === 6) {
+    ok = (await hashPassword(given, user.reset_salt, ITERATIONS)) === user.reset_hash;
+  }
+  if (!ok) {
+    await env.DB.prepare("INSERT INTO attempts (ip, ts) VALUES (?1, ?2)").bind(ip, Date.now()).run();
+    return json({ error: "That code is wrong or has expired." }, 401, cors);
+  }
+  await setPassword(env, uname, password);
+  await env.DB.prepare(
+    "UPDATE users SET reset_salt = NULL, reset_hash = NULL, reset_expires = NULL WHERE username = ?1"
+  ).bind(uname).run();
+  if (user.tg_chat_id) {
+    await telegram(env, "sendMessage", {
+      chat_id: user.tg_chat_id,
+      text: `✅ The password for @${uname} was just changed. If that wasn't you, change it again straight away.`,
+    });
+  }
+  return json({ ok: true }, 200, cors);
 }
 
 // ---------- plans ----------

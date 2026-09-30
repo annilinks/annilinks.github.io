@@ -636,6 +636,7 @@
     <span class="status" id="status">No changes</span>
     <span class="spacer"></span>
     <button class="btn ghost sm" id="btn-password" type="button">🔒 Password</button>
+    <button class="btn ghost sm" id="btn-telegram" type="button">✈️ Telegram</button>
     <button class="btn ghost sm" id="btn-recovery" type="button">🆘 Recovery code</button>
     <button class="btn ghost sm" id="btn-cancel" type="button">Cancel</button>
     <button class="btn primary sm" id="btn-save" type="button">💾 Save</button>
@@ -835,9 +836,9 @@
         </details>
         <details class="q">
           <summary>What if I forget my password?</summary>
-          <p>When you make your page you get a recovery code — save it. On the login screen, "Forgot your password?"
-             asks for your username and that code, and lets you set a new password. Lost the code too? Write to us from
-             the contact page and we'll help you back in.</p>
+          <p>Two ways back in. Connect Telegram from edit mode and the bot will send you a six-digit code whenever you
+             need one. Or use the recovery code you were given when you made your page. Lost both? Write to us from the
+             contact page and we'll help you back in.</p>
         </details>
         <details class="q">
           <summary>What does Pro cost, and can I stop?</summary>
@@ -1665,6 +1666,100 @@
       }
     }
 
+    // Connecting Telegram means a reset code can be sent even if the recovery code is lost.
+    async function telegramSettings() {
+      if (telegramState.connected) {
+        const box = el("div");
+        box.append(el("p", null, `Reset codes go to your Telegram${telegramState.name ? " (" + telegramState.name + ")" : ""}.`));
+        const off = await openForm({
+          title: "✈️ Telegram connected",
+          intro: box,
+          okText: "Disconnect",
+          danger: true,
+        });
+        if (!off) return;
+        try {
+          await api("/api/telegram/unlink", { method: "POST" });
+          telegramState = { connected: false, name: null };
+          toast("Telegram disconnected");
+        } catch (e) { if (!handleAuthError(e)) toast(e.message, "bad"); }
+        return;
+      }
+
+      let link;
+      try { link = await api("/api/telegram/link", { method: "POST" }); }
+      catch (e) { if (!handleAuthError(e)) toast(e.message, "bad"); return; }
+
+      const box = el("div");
+      box.append(el("p", null, "Connect Telegram and you can get a reset code there if you ever forget your password."));
+      const steps = el("ol");
+      steps.style.cssText = "margin:12px 0 0 18px;display:grid;gap:6px";
+      const first = el("li");
+      const a = el("a", null, "Open @" + link.bot + " in Telegram");
+      a.href = link.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      first.append(a);
+      steps.append(first, el("li", null, "Tap Start in the chat."), el("li", null, "Come back here and press Check."));
+      box.append(steps, el("p", "muted small", `This link works for ${link.minutes} minutes.`));
+
+      const v = await openForm({ title: "✈️ Connect Telegram", intro: box, okText: "Check" });
+      if (!v) return;
+      try {
+        const me = await api("/api/me");
+        telegramState = me.telegram || telegramState;
+        if (telegramState.connected) toast("Telegram connected ✅", "good");
+        else toast("Not connected yet. Tap Start in the chat, then press Check again.", "bad");
+      } catch (e) { if (!handleAuthError(e)) toast(e.message, "bad"); }
+    }
+
+    // Step 2 of a Telegram reset: the six digits that arrived in the chat.
+    async function enterSentCode(username) {
+      const v = await openForm({
+        title: "✈️ Code sent to Telegram",
+        intro: "Open the chat with the bot, copy the six digits and pick a new password.",
+        fields: [
+          { name: "code", label: "Six-digit code", placeholder: "123456", inputmode: "numeric", required: true },
+          { name: "password", label: "New password", type: "password", required: true, autocomplete: "new-password" },
+        ],
+        okText: "Set new password",
+        onSubmit: async ({ code, password }) => {
+          if (password.length < 8) return "New password must be at least 8 characters.";
+          try {
+            await api("/api/reset-code", { method: "POST", body: { username, code, password } });
+            return null;
+          } catch (e) {
+            return e.message;
+          }
+        },
+      });
+      if (!v) return;
+      setAuthMode("login");
+      $("auth-user").value = username;
+      $("auth-pass").value = "";
+      $("auth-pass").focus();
+      toast("Password changed. Please log in.", "good");
+    }
+
+    async function forgotViaTelegram() {
+      const v = await openForm({
+        title: "✈️ Reset through Telegram",
+        intro: "If your page is connected to Telegram, the bot will send you a six-digit code.",
+        fields: [{ name: "username", label: "Username", value: $("auth-user").value.trim(), required: true, autocomplete: "username" }],
+        okText: "Send me a code",
+        onSubmit: async ({ username }) => {
+          try {
+            const out = await api("/api/forgot", { method: "POST", body: { username } });
+            if (!out.sent) return "That page isn't connected to Telegram. Use your recovery code instead, or ask the site owner for help.";
+            return null;
+          } catch (e) {
+            return e.message;
+          }
+        },
+      });
+      if (v) await enterSentCode(v.username.trim().toLowerCase());
+    }
+
     async function forgotPassword() {
       const v = await openForm({
         title: "Forgot your password?",
@@ -1699,6 +1794,28 @@
     }
 
     let pendingCode = null;
+    let telegramState = { connected: false, name: null };
+
+    // Two ways back in: the code we handed out at signup, or a code sent to Telegram.
+    async function chooseRecovery() {
+      const box = el("div");
+      box.append(el("p", null, "How would you like to get back in?"));
+      const v = await openForm({
+        title: "Forgot your password?",
+        intro: box,
+        fields: [{
+          name: "how", label: "Choose one", value: "telegram",
+          options: [
+            { value: "telegram", label: "Send a code to my Telegram" },
+            { value: "code", label: "I have my recovery code" },
+          ],
+        }],
+        okText: "Continue",
+      });
+      if (!v) return;
+      if (v.how === "telegram") forgotViaTelegram();
+      else forgotPassword();
+    }
 
     // ---------- landing, signup and login ----------
     let authMode = "signup";
@@ -1722,7 +1839,7 @@
         const forgot = el("p");
         const f = el("button", null, "Forgot your password?");
         f.type = "button";
-        f.addEventListener("click", forgotPassword);
+        f.addEventListener("click", chooseRecovery);
         forgot.append(f);
         rows.push(forgot);
       }
@@ -2536,6 +2653,7 @@
           out = await api("/api/me");
           isSiteOwner = !!out.owner;
           if (out.plan) account = { plan: out.plan, planUntil: out.planUntil, limits: out.limits };
+          if (out.telegram) telegramState = out.telegram;
           saveSession({ ...session, display: out.display });
         } else {
           out = await api("/api/page?u=" + encodeURIComponent(viewing));
@@ -2577,6 +2695,7 @@
     $("btn-save").addEventListener("click", save);
     $("btn-password").addEventListener("click", changePassword);
     $("btn-recovery").addEventListener("click", makeNewRecoveryCode);
+    $("btn-telegram").addEventListener("click", telegramSettings);
     $("title-box").addEventListener("click", () => editing && editHeader());
     $("auth-form").addEventListener("submit", submitAuth);
     $("auth-user").addEventListener("input", updateUrlPreview);

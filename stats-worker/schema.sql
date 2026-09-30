@@ -32,7 +32,14 @@ CREATE TABLE IF NOT EXISTS users (
   plan TEXT NOT NULL DEFAULT 'free',
   plan_until INTEGER,
   recovery_salt TEXT,          -- for the one recovery code an account holds
-  recovery_hash TEXT
+  recovery_hash TEXT,
+  tg_chat_id TEXT,             -- Telegram chat that reset codes go to
+  tg_name TEXT,
+  link_code TEXT,              -- short-lived code used to connect Telegram
+  link_expires INTEGER,
+  reset_salt TEXT,             -- short-lived code sent to Telegram
+  reset_hash TEXT,
+  reset_expires INTEGER
 );
 
 -- Login sessions; only a hash of each token is stored
