@@ -35,6 +35,19 @@
     }
     button, input, select { font: inherit; color: inherit; }
 
+    .inapp-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: #faf5ff; border-bottom: 1px solid #ede9fe;
+      font-size: .84rem; color: #4b5563; line-height: 1.45;
+    }
+    .inapp-bar .text { flex: 1; min-width: 0; }
+    .inapp-bar .btn { padding: 7px 14px; font-size: .82rem; flex-shrink: 0; }
+    .inapp-bar .close {
+      border: 0; background: none; cursor: pointer;
+      color: var(--muted); font-size: 1.1rem; line-height: 1; padding: 4px 6px;
+    }
+
     .rainbow-bar {
       height: 6px;
       background: linear-gradient(90deg, #ec4899, #f97316, #f59e0b, #10b981, #06b6d4, #3b82f6, #8b5cf6);
@@ -410,6 +423,7 @@
 </head>
 <body>
   <div class="rainbow-bar"></div>
+  <div class="inapp-bar" id="inapp-bar" hidden></div>
 
   <!-- ---------- edit bar (own page only) ---------- -->
   <div class="editbar" id="editbar" hidden>
@@ -610,6 +624,62 @@
     function prettyUrl(u) {
       if (u.protocol === "mailto:" || u.protocol === "tel:") return u.href.replace(/^(mailto|tel):/, "");
       return (u.host + u.pathname + u.search).replace(/^www\./, "").replace(/\/$/, "");
+    }
+
+    // Which phone app owns a link, so Android can hand the link to that app.
+    const ANDROID_APPS = [
+      [/^instagram\.com$/, "com.instagram.android"],
+      [/^threads\.(net|com)$/, "com.instagram.barcelona"],
+      [/^(youtube\.com|youtu\.be|m\.youtube\.com)$/, "com.google.android.youtube"],
+      [/^(twitter\.com|x\.com|t\.co)$/, "com.twitter.android"],
+      [/^(facebook\.com|fb\.com|fb\.me)$/, "com.facebook.katana"],
+      [/^(whatsapp\.com|wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com)$/, "com.whatsapp"],
+      [/^t\.me$/, "org.telegram.messenger"],
+      [/^(linkedin\.com|lnkd\.in)$/, "com.linkedin.android"],
+      [/^(open\.spotify\.com|spotify\.com)$/, "com.spotify.music"],
+      [/^(tiktok\.com|vm\.tiktok\.com)$/, "com.zhiliaoapp.musically"],
+      [/^(pinterest\.com|pin\.it)$/, "com.pinterest"],
+      [/^(reddit\.com|redd\.it)$/, "com.reddit.frontpage"],
+      [/^(snapchat\.com)$/, "com.snapchat.android"],
+      [/^(discord\.com|discord\.gg)$/, "com.discord"],
+      [/^github\.com$/, "com.github.android"],
+      [/^(maps\.google\.com|maps\.app\.goo\.gl)$/, "com.google.android.apps.maps"],
+      [/^(amazon\.in|amazon\.com)$/, "in.amazon.mShop.android.shopping"],
+      [/^(flipkart\.com|dl\.flipkart\.com)$/, "com.flipkart.android"],
+      [/^drive\.google\.com$/, "com.google.android.apps.docs"],
+      [/^(telegram\.me)$/, "org.telegram.messenger"],
+    ];
+
+    const PLATFORM = (() => {
+      const ua = navigator.userAgent || "";
+      return {
+        android: /Android/i.test(ua),
+        ios: /iPhone|iPad|iPod/i.test(ua),
+        // Links opened inside these apps stay in their own small browser.
+        inApp: /Instagram|FBAN|FBAV|FB_IAB|Snapchat|Line\/|MicroMessenger|TikTok|Threads/i.test(ua),
+      };
+    })();
+
+    function androidPackage(hostname) {
+      const host = String(hostname || "").replace(/^www\./, "").toLowerCase();
+      for (const [re, pkg] of ANDROID_APPS) if (re.test(host)) return pkg;
+      return null;
+    }
+
+    // Android intent link: opens the app that owns the link, or the browser if it isn't installed.
+    function intentUrl(u, pkg) {
+      const parts = ["scheme=" + u.protocol.replace(":", "")];
+      if (pkg) parts.push("package=" + pkg);
+      parts.push("S.browser_fallback_url=" + encodeURIComponent(u.href));
+      return "intent://" + u.host + u.pathname + u.search + u.hash + "#Intent;" + parts.join(";") + ";end";
+    }
+
+    // Returns a better target for this device, or null to open the link normally.
+    function deepLink(u, platform = PLATFORM) {
+      if (!platform.android || !/^https?:$/.test(u.protocol)) return null;
+      const pkg = androidPackage(u.hostname);
+      if (!pkg && !platform.inApp) return null; // a normal tab is fine
+      return intentUrl(u, pkg);
     }
 
     const pageUrl = name => CONFIG.site + "?u=" + name;
@@ -840,7 +910,11 @@
             main.href = u.href;
             main.target = "_blank";
             main.rel = "noopener";
-            main.addEventListener("click", () => track("click", link.title, u.href));
+            main.addEventListener("click", e => {
+              track("click", link.title, u.href);
+              const deep = deepLink(u);
+              if (deep) { e.preventDefault(); location.href = deep; }
+            });
             main.addEventListener("auxclick", e => { if (e.button === 1) track("click", link.title, u.href); });
           }
 
@@ -1573,6 +1647,36 @@
       return c;
     }
 
+    // Instagram and friends open links inside their own browser. Offer a way out.
+    function showInAppBar() {
+      if (!PLATFORM.inApp) return;
+      try { if (sessionStorage.getItem("inapp-bar") === "off") return; } catch {}
+      const bar = $("inapp-bar");
+      const text = el("span", "text");
+      bar.replaceChildren();
+      if (PLATFORM.android) {
+        text.textContent = "You're in an app's built-in browser. Links still open in their app or in Chrome.";
+        const open = el("button", "btn ghost", "Open in Chrome");
+        open.type = "button";
+        open.addEventListener("click", () => {
+          try { location.href = intentUrl(new URL(location.href), null); } catch {}
+        });
+        bar.append(text, open);
+      } else {
+        text.textContent = "You're in an app's built-in browser. For links to open in their app, tap ••• above and choose “Open in browser”.";
+        bar.append(text);
+      }
+      const close = el("button", "close", "✕");
+      close.type = "button";
+      close.setAttribute("aria-label", "Hide this message");
+      close.addEventListener("click", () => {
+        bar.hidden = true;
+        try { sessionStorage.setItem("inapp-bar", "off"); } catch {}
+      });
+      bar.append(close);
+      bar.hidden = false;
+    }
+
     // ---------- boot ----------
     async function boot() {
       loadSession();
@@ -1601,6 +1705,7 @@
         $("pageview").hidden = false;
         render();
         renderFooter();
+        showInAppBar();
         setTimeout(() => grid.classList.remove("animate"), 900);
         track("view");
       } catch (e) {
