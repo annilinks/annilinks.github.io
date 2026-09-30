@@ -7,6 +7,9 @@
 //   GET  /api/page?u=name                                    -> public page data
 //   PUT  /api/page             (session) { title, subtitle, columns }
 //   POST /api/password         (session) { current, next }
+//   POST /api/recovery         (session)                     -> a fresh recovery code
+//   POST /api/reset            { username, code, password }   -> new password from a recovery code
+//   POST /api/admin/reset      (owner session) { username }   -> a temporary password
 //   GET  /api/stats?days&tz    (session)                     -> stats for the caller's page
 //   GET  /api/admin/users      (owner session)               -> all accounts
 //   POST /api/admin/disable    (owner session) { username, disabled }
@@ -60,6 +63,9 @@ export default {
       if (path === "/api/page" && method === "GET") return await publicPage(url, env, cors);
       if (path === "/api/page" && method === "PUT") return await savePage(request, env, cors);
       if (path === "/api/password" && method === "POST") return await changePassword(request, env, cors);
+      if (path === "/api/recovery" && method === "POST") return await newRecoveryCode(request, env, cors);
+      if (path === "/api/reset" && method === "POST") return await resetWithCode(request, env, cors);
+      if (path === "/api/admin/reset" && method === "POST") return await adminReset(request, env, cors);
       if (path === "/api/stats" && method === "GET") return await stats(request, env, cors, url);
       if (path === "/api/admin/users" && method === "GET") return await adminUsers(request, env, cors);
       if (path === "/api/admin/disable" && method === "POST") return await adminDisable(request, env, cors);
@@ -93,13 +99,17 @@ async function signup(request, env, cors) {
   const salt = randomB64(16);
   const hash = await hashPassword(password, salt, ITERATIONS);
   const page = starterPage(name);
+  const recovery = makeRecoveryCode();
+  const recoverySalt = randomB64(16);
+  const recoveryHash = await hashPassword(tidyCode(recovery), recoverySalt, ITERATIONS);
   await env.DB.prepare(
-    `INSERT INTO users (username, display, salt, hash, iterations, created, page) VALUES (?1,?2,?3,?4,?5,?6,?7)`
-  ).bind(uname, name, salt, hash, ITERATIONS, Date.now(), JSON.stringify(page)).run();
+    `INSERT INTO users (username, display, salt, hash, iterations, created, page, recovery_salt, recovery_hash)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)`
+  ).bind(uname, name, salt, hash, ITERATIONS, Date.now(), JSON.stringify(page), recoverySalt, recoveryHash).run();
 
   return json({
     token: await newSession(env, uname), username: uname, display: name, page,
-    plan: "free", planUntil: null, limits: LIMITS.free,
+    plan: "free", planUntil: null, limits: LIMITS.free, recoveryCode: recovery,
   }, 200, cors);
 }
 
@@ -155,6 +165,89 @@ async function changePassword(request, env, cors) {
     env.DB.prepare("DELETE FROM sessions WHERE username = ?1 AND token != ?2").bind(user.username, await sha256(raw)),
   ]);
   return json({ ok: true }, 200, cors);
+}
+
+// ---------- forgotten passwords ----------
+
+// Letters and digits that are hard to mix up when read out or typed.
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function makeRecoveryCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  const chars = [...bytes].map(b => CODE_ALPHABET[b % CODE_ALPHABET.length]);
+  return "LB-" + [0, 4, 8, 12].map(i => chars.slice(i, i + 4).join("")).join("-");
+}
+
+const tidyCode = code => String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+function makePassword() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return [...bytes].map(b => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("").replace(/(.{4})(?=.)/g, "$1-");
+}
+
+async function setPassword(env, username, password) {
+  const salt = randomB64(16);
+  const hash = await hashPassword(password, salt, ITERATIONS);
+  await env.DB.batch([
+    env.DB.prepare("UPDATE users SET salt = ?2, hash = ?3, iterations = ?4 WHERE username = ?1")
+      .bind(username, salt, hash, ITERATIONS),
+    env.DB.prepare("DELETE FROM sessions WHERE username = ?1").bind(username), // every device logs out
+  ]);
+}
+
+async function newRecoveryCode(request, env, cors) {
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: "Not logged in" }, 401, cors);
+  const code = makeRecoveryCode();
+  const salt = randomB64(16);
+  const hash = await hashPassword(tidyCode(code), salt, ITERATIONS);
+  await env.DB.prepare("UPDATE users SET recovery_salt = ?2, recovery_hash = ?3 WHERE username = ?1")
+    .bind(user.username, salt, hash).run();
+  return json({ recoveryCode: code }, 200, cors);
+}
+
+async function resetWithCode(request, env, cors) {
+  const ip = clientIp(request);
+  if (await tooManyAttempts(env, ip)) {
+    return json({ error: "Too many wrong tries. Please wait a few minutes." }, 429, cors);
+  }
+  const { username = "", code = "", password = "" } = await body(request);
+  if (String(password).length < 8) return json({ error: "New password must be at least 8 characters." }, 400, cors);
+
+  const uname = String(username).trim().toLowerCase();
+  const user = await env.DB.prepare("SELECT * FROM users WHERE username = ?1").bind(uname).first();
+  const given = tidyCode(code);
+  let ok = false;
+  if (user && user.recovery_hash && given) {
+    ok = (await hashPassword(given, user.recovery_salt, ITERATIONS)) === user.recovery_hash;
+  }
+  if (!ok) {
+    await env.DB.prepare("INSERT INTO attempts (ip, ts) VALUES (?1, ?2)").bind(ip, Date.now()).run();
+    return json({ error: "That username and recovery code don't match." }, 401, cors);
+  }
+  if (user.disabled) return json({ error: "This account has been turned off." }, 403, cors);
+
+  await setPassword(env, uname, password);
+  // The used code is replaced, so a copied-down code can't be used twice.
+  const next = makeRecoveryCode();
+  const salt = randomB64(16);
+  const hash = await hashPassword(tidyCode(next), salt, ITERATIONS);
+  await env.DB.prepare("UPDATE users SET recovery_salt = ?2, recovery_hash = ?3 WHERE username = ?1")
+    .bind(uname, salt, hash).run();
+
+  return json({ ok: true, recoveryCode: next }, 200, cors);
+}
+
+async function adminReset(request, env, cors) {
+  const user = await sessionUser(request, env);
+  if (!user || !isOwner(env, user.username)) return json({ error: "Not allowed" }, 403, cors);
+  const { username = "" } = await body(request);
+  const target = String(username).trim().toLowerCase();
+  const row = await env.DB.prepare("SELECT username FROM users WHERE username = ?1").bind(target).first();
+  if (!row) return json({ error: "No such account" }, 404, cors);
+  const password = makePassword();
+  await setPassword(env, target, password);
+  return json({ ok: true, username: target, password }, 200, cors);
 }
 
 // ---------- plans ----------

@@ -287,6 +287,18 @@
     .period-toggle button.on { background: #fff; color: var(--text); box-shadow: var(--sh-1); }
     .save-pill { font-size: .72rem; font-weight: 700; color: var(--green); background: #ecfdf5; border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
 
+    .code-box {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md);
+      padding: 14px 16px; margin-top: 12px;
+    }
+    .code-box code {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 1.05rem; font-weight: 600; letter-spacing: .04em; color: var(--text);
+      word-break: break-all;
+    }
+    .code-box .btn { margin-left: auto; }
+
     .pro-badge {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: .72rem; font-weight: 700; color: #fff;
@@ -624,6 +636,7 @@
     <span class="status" id="status">No changes</span>
     <span class="spacer"></span>
     <button class="btn ghost sm" id="btn-password" type="button">🔒 Password</button>
+    <button class="btn ghost sm" id="btn-recovery" type="button">🆘 Recovery code</button>
     <button class="btn ghost sm" id="btn-cancel" type="button">Cancel</button>
     <button class="btn primary sm" id="btn-save" type="button">💾 Save</button>
   </div>
@@ -819,6 +832,12 @@
           <summary>What do the stats show?</summary>
           <p>Page views, visitors by IP address, every link with its taps and copies, where visitors came from,
              their country, device and browser, and the latest activity. Your own visits are not counted while you are logged in.</p>
+        </details>
+        <details class="q">
+          <summary>What if I forget my password?</summary>
+          <p>When you make your page you get a recovery code — save it. On the login screen, "Forgot your password?"
+             asks for your username and that code, and lets you set a new password. Lost the code too? Write to us from
+             the contact page and we'll help you back in.</p>
         </details>
         <details class="q">
           <summary>What does Pro cost, and can I stop?</summary>
@@ -1605,6 +1624,82 @@
       if (v) toast("Password changed ✅ Other devices have been logged out", "good");
     }
 
+    // ---------- recovery codes ----------
+    // Shown once, and only the person who has it can set a new password without us.
+    function showCode(title, code, lead, filename) {
+      const box = el("div");
+      box.append(el("p", null, lead));
+      const row = el("div", "code-box");
+      row.append(el("code", null, code));
+      const copy = el("button", "btn outline sm", "Copy");
+      copy.type = "button";
+      copy.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(code); copy.textContent = "Copied ✓"; }
+        catch { window.prompt("Copy this:", code); }
+      });
+      row.append(copy);
+      box.append(row);
+      const save = el("button", "link-btn", "Save it as a file");
+      save.type = "button";
+      save.style.marginTop = "10px";
+      save.addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([`${title}\n\n${code}\n\nUse it at ${CONFIG.site}\n`], { type: "text/plain" }));
+        a.download = filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      });
+      box.append(save);
+      return openForm({ title, intro: box, okText: "I've saved it" });
+    }
+
+    const recoveryLead = "Keep this somewhere safe. If you ever forget your password, this code is the only way back into your account. It is shown only once.";
+
+    async function makeNewRecoveryCode() {
+      if (!(await confirmBox("🆘 New recovery code?", "Your old recovery code stops working right away. You'll see the new one once.", "Make a new code"))) return;
+      try {
+        const out = await api("/api/recovery", { method: "POST" });
+        await showCode("🆘 Your recovery code", out.recoveryCode, recoveryLead, (session.username || "linkboard") + "-recovery-code.txt");
+      } catch (e) {
+        if (!handleAuthError(e)) toast(e.message, "bad");
+      }
+    }
+
+    async function forgotPassword() {
+      const v = await openForm({
+        title: "Forgot your password?",
+        intro: "Enter the recovery code you were given when you made your page, and pick a new password.",
+        fields: [
+          { name: "username", label: "Username", value: $("auth-user").value.trim(), required: true, autocomplete: "username" },
+          { name: "code", label: "Recovery code", placeholder: "LB-XXXX-XXXX-XXXX", required: true },
+          { name: "password", label: "New password", type: "password", required: true, autocomplete: "new-password" },
+        ],
+        okText: "Set new password",
+        onSubmit: async ({ username, code, password }) => {
+          if (password.length < 8) return "New password must be at least 8 characters.";
+          try {
+            const out = await api("/api/reset", { method: "POST", body: { username, code, password } });
+            pendingCode = out.recoveryCode;
+            return null;
+          } catch (e) {
+            return e.message;
+          }
+        },
+      });
+      if (!v) return;
+      if (pendingCode) {
+        await showCode("🆘 Your new recovery code", pendingCode, "Your password is changed. Here is a fresh code — the old one no longer works.", v.username + "-recovery-code.txt");
+        pendingCode = null;
+      }
+      setAuthMode("login");
+      $("auth-user").value = v.username;
+      $("auth-pass").value = "";
+      $("auth-pass").focus();
+      toast("Password changed. Please log in.", "good");
+    }
+
+    let pendingCode = null;
+
     // ---------- landing, signup and login ----------
     let authMode = "signup";
 
@@ -1622,7 +1717,16 @@
       b.type = "button";
       b.addEventListener("click", () => setAuthMode(signup ? "login" : "signup"));
       p.append(b);
-      $("auth-switch").replaceChildren(p);
+      const rows = [p];
+      if (!signup) {
+        const forgot = el("p");
+        const f = el("button", null, "Forgot your password?");
+        f.type = "button";
+        f.addEventListener("click", forgotPassword);
+        forgot.append(f);
+        rows.push(forgot);
+      }
+      $("auth-switch").replaceChildren(...rows);
     }
 
     function updateUrlPreview() {
@@ -1644,6 +1748,9 @@
       try {
         const out = await api(authMode === "signup" ? "/api/signup" : "/api/login", { method: "POST", body: { username, password } });
         saveSession({ token: out.token, username: out.username, display: out.display });
+        if (out.recoveryCode) {
+          await showCode("🆘 Save your recovery code", out.recoveryCode, recoveryLead, out.username + "-recovery-code.txt");
+        }
         location.href = pageUrl(out.username);
       } catch (err) {
         $("auth-error").textContent = err.message;
@@ -1778,6 +1885,16 @@
         link.rel = "noopener";
         const joined = new Date(u.created).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
         who.append(link, el("div", "muted small", `${u.views} views · ${u.clicks} taps · joined ${joined}${u.disabled ? " · turned off" : ""}`));
+        const reset = el("button", "btn outline sm", "Reset password");
+        reset.type = "button";
+        reset.addEventListener("click", async () => {
+          if (!(await confirmBox("Reset this password?", `${u.username} will be logged out everywhere and will need the temporary password you hand over.`, "Reset"))) return;
+          try {
+            const out = await api("/api/admin/reset", { method: "POST", body: { username: u.username } });
+            await showCode("Temporary password for @" + u.username, out.password, "Send this to them privately. Ask them to log in and change it under 🔒 Password.", u.username + "-temp-password.txt");
+          } catch (e) { toast(e.message, "bad"); }
+        });
+        row.append(reset);
         const btn = el("button", "btn " + (u.disabled ? "ghost" : "danger"), u.disabled ? "Turn on" : "Turn off");
         btn.type = "button";
         btn.addEventListener("click", async () => {
@@ -2459,6 +2576,7 @@
     $("btn-cancel").addEventListener("click", cancelEdit);
     $("btn-save").addEventListener("click", save);
     $("btn-password").addEventListener("click", changePassword);
+    $("btn-recovery").addEventListener("click", makeNewRecoveryCode);
     $("title-box").addEventListener("click", () => editing && editHeader());
     $("auth-form").addEventListener("submit", submitAuth);
     $("auth-user").addEventListener("input", updateUrlPreview);

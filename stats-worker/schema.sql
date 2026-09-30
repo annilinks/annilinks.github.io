@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS users (
   page TEXT NOT NULL,           -- JSON: { title, subtitle, columns }
   disabled INTEGER NOT NULL DEFAULT 0,
   plan TEXT NOT NULL DEFAULT 'free',
-  plan_until INTEGER
+  plan_until INTEGER,
+  recovery_salt TEXT,          -- for the one recovery code an account holds
+  recovery_hash TEXT
 );
 
 -- Login sessions; only a hash of each token is stored

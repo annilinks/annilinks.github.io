@@ -54,3 +54,17 @@ Then add a webhook in Razorpay for `payment.captured` pointing at
 
 Terms, privacy and the refund policy are in [`legal.html`](legal.html) — fill in your contact
 details there before taking payments.
+
+## Forgotten passwords
+
+There is no email in the loop, so recovery works two ways:
+
+- **Recovery code.** Every new account is shown one code (`LB-XXXX-XXXX-XXXX-XXXX`) at signup.
+  "Forgot your password?" on the login screen takes the username plus that code and sets a new
+  password. Using a code replaces it with a fresh one, so a code only ever works once.
+  A logged-in owner can make a new code any time with **🆘 Recovery code** in edit mode.
+- **Owner reset.** In the Admin list the site owner can reset any account's password; the temporary
+  password is shown once, to be passed on privately. That account is logged out everywhere.
+
+Codes are stored the same way as passwords — PBKDF2-SHA256 of the code, never the code itself —
+and reset attempts share the login rate limit.
