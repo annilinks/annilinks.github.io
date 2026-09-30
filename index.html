@@ -674,12 +674,68 @@
       return "intent://" + u.host + u.pathname + u.search + u.hash + "#Intent;" + parts.join(";") + ";end";
     }
 
+    // An app's own address for a link (iPhone needs this inside another app's browser).
+    function appScheme(u) {
+      const host = u.hostname.replace(/^www\.|^m\./, "").toLowerCase();
+      const path = u.pathname.replace(/^\/+|\/+$/g, "");
+      const seg = path ? path.split("/") : [];
+      const first = seg[0] || "";
+      const enc = encodeURIComponent;
+
+      if (host === "instagram.com") {
+        if (!first || ["p", "reel", "reels", "stories", "explore"].includes(first)) return null;
+        return "instagram://user?username=" + enc(first);
+      }
+      if (host === "youtube.com") return "youtube://" + u.host + u.pathname + u.search;
+      if (host === "youtu.be") return first ? "youtube://" + enc(first) : null;
+      if (host === "twitter.com" || host === "x.com") {
+        if (seg[1] === "status" && seg[2]) return "twitter://status?id=" + enc(seg[2]);
+        return first ? "twitter://user?screen_name=" + enc(first) : null;
+      }
+      if (host === "facebook.com" || host === "fb.com") return "fb://facewebmodal/f?href=" + enc(u.href);
+      if (host === "wa.me" || host === "api.whatsapp.com") {
+        const phone = (first || u.searchParams.get("phone") || "").replace(/\D/g, "");
+        const text = u.searchParams.get("text");
+        return phone ? "whatsapp://send?phone=" + phone + (text ? "&text=" + enc(text) : "") : null;
+      }
+      if (host === "t.me" || host === "telegram.me") return first ? "tg://resolve?domain=" + enc(first) : null;
+      if (host === "open.spotify.com") return seg[1] ? `spotify:${seg[0]}:${seg[1]}` : null;
+      if (host === "linkedin.com") return first ? "linkedin://" + path : null;
+      if (host === "pinterest.com") return "pinterest://" + path;
+      return null;
+    }
+
+    // Try the app first; if it doesn't take over, fall back to the normal link.
+    function openViaScheme(scheme, fallback) {
+      const start = Date.now();
+      let cancelled = false;
+      const appTookOver = () => {
+        if (document.hidden) { cancelled = true; document.removeEventListener("visibilitychange", appTookOver); }
+      };
+      document.addEventListener("visibilitychange", appTookOver);
+      setTimeout(() => {
+        document.removeEventListener("visibilitychange", appTookOver);
+        // A late timer means the phone was busy opening the app, so leave the page alone.
+        if (cancelled || document.hidden || Date.now() - start > 2600) return;
+        location.href = fallback;
+      }, 1300);
+      location.href = scheme;
+    }
+
     // Returns a better target for this device, or null to open the link normally.
     function deepLink(u, platform = PLATFORM) {
-      if (!platform.android || !/^https?:$/.test(u.protocol)) return null;
-      const pkg = androidPackage(u.hostname);
-      if (!pkg && !platform.inApp) return null; // a normal tab is fine
-      return intentUrl(u, pkg);
+      if (!/^https?:$/.test(u.protocol)) return null;
+      if (platform.android) {
+        const pkg = androidPackage(u.hostname);
+        if (!pkg && !platform.inApp) return null; // a normal tab is fine
+        return { type: "intent", url: intentUrl(u, pkg) };
+      }
+      // On iPhone a plain link already opens the app — except inside another app's browser.
+      if (platform.ios && platform.inApp) {
+        const scheme = appScheme(u);
+        if (scheme) return { type: "scheme", url: scheme, fallback: u.href };
+      }
+      return null;
     }
 
     const pageUrl = name => CONFIG.site + "?u=" + name;
@@ -913,7 +969,10 @@
             main.addEventListener("click", e => {
               track("click", link.title, u.href);
               const deep = deepLink(u);
-              if (deep) { e.preventDefault(); location.href = deep; }
+              if (!deep) return;
+              e.preventDefault();
+              if (deep.type === "scheme") openViaScheme(deep.url, deep.fallback);
+              else location.href = deep.url;
             });
             main.addEventListener("auxclick", e => { if (e.button === 1) track("click", link.title, u.href); });
           }
@@ -1663,7 +1722,7 @@
         });
         bar.append(text, open);
       } else {
-        text.textContent = "You're in an app's built-in browser. For links to open in their app, tap ••• above and choose “Open in browser”.";
+        text.textContent = "You're in an app's built-in browser. Links still try to open in their app. For everything else, tap ••• above and choose “Open in browser”.";
         bar.append(text);
       }
       const close = el("button", "close", "✕");
