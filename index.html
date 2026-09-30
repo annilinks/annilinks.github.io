@@ -255,6 +255,15 @@
     details.q[open] summary::after { content: "–"; }
     details.q p { color: var(--muted); font-size: .92rem; line-height: 1.65; margin-top: 10px; }
 
+    /* ---------------- product shots ---------------- */
+    .shots { margin-top: 34px; display: grid; gap: 22px; grid-template-columns: 1.25fr .95fr; align-items: start; }
+    @media (max-width: 860px) { .shots { grid-template-columns: 1fr; } }
+    .shot { border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); box-shadow: var(--sh-2); }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot figcaption { padding: 12px 16px; font-size: .84rem; color: var(--muted); border-top: 1px solid var(--line); background: var(--surface-2); }
+    .shot figcaption b { color: var(--text); font-weight: 600; }
+    .sample-note { text-align: center; color: var(--muted); font-size: .78rem; margin-top: 16px; }
+
     /* ---------------- pricing ---------------- */
     .plans { margin-top: 34px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 820px; margin-inline: auto; }
     .plan { border: 1px solid var(--line); border-radius: var(--r-xl); padding: 26px; background: var(--surface); box-shadow: var(--sh-1); }
@@ -729,6 +738,26 @@
           <p>Share the one link everywhere, then open Stats to see what people actually tap.</p>
         </div>
       </div>
+    </section>
+
+    <section class="section" id="stats-look">
+      <div class="section-head">
+        <h2>You'll know what actually works</h2>
+        <p>Every visit and every tap is counted, so you can see which link deserves the top spot.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot">
+          <img src="shot-stats.jpg" width="1100" height="591" loading="lazy"
+               alt="The Linkboard stats screen: 912 page views, 11 visitors, 277 link taps, 30% tap rate, and a bar chart of page views for the last 30 days.">
+          <figcaption><b>Page views, visitors and taps</b> — for today, the last 7 or 30 days, or all time.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="shot-links.jpg" width="1100" height="503" loading="lazy"
+               alt="A table of links with their taps, copies, how many people tapped them and when — including one link marked Not tapped.">
+          <figcaption><b>Every link, ranked</b> — including the ones nobody tapped.</figcaption>
+        </figure>
+      </div>
+      <p class="sample-note">Screens from a demo page with sample numbers.</p>
     </section>
 
     <section class="section" id="pricing">
@@ -2212,18 +2241,20 @@
     }
 
     function linksCard(rows) {
-      const byUrl = new Map(rows.map(r => [r.url, r]));
+      // Match on the address without a trailing slash, so /page and /page/ count as one link.
+      const key = url => String(url || "").replace(/\/$/, "");
+      const byUrl = new Map(rows.map(r => [key(r.url), r]));
       const onPage = new Set();
       const list = [];
       data.columns.forEach(col => col.links.forEach(l => {
         const u = safeUrl(l.url);
         if (!u) return;
-        onPage.add(u.href);
-        const r = byUrl.get(u.href) || {};
+        onPage.add(key(u.href));
+        const r = byUrl.get(key(u.href)) || {};
         list.push({ title: l.title, where: `${col.icon} ${col.name}`, clicks: r.clicks || 0, copies: r.copies || 0, people: r.people || 0, last: r.last || null });
       }));
       rows.forEach(r => {
-        if (!onPage.has(r.url)) list.push({ title: r.title || r.url, where: "Removed from page", clicks: r.clicks, copies: r.copies, people: r.people, last: r.last });
+        if (!onPage.has(key(r.url))) list.push({ title: r.title || r.url, where: "Removed from page", clicks: r.clicks, copies: r.copies, people: r.people, last: r.last });
       });
       list.sort((a, b) => b.clicks - a.clicks || b.copies - a.copies);
 
