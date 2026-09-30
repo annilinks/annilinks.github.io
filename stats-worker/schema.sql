@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS users (
   iterations INTEGER NOT NULL,
   created INTEGER NOT NULL,
   page TEXT NOT NULL,           -- JSON: { title, subtitle, columns }
-  disabled INTEGER NOT NULL DEFAULT 0
+  disabled INTEGER NOT NULL DEFAULT 0,
+  plan TEXT NOT NULL DEFAULT 'free',
+  plan_until INTEGER
 );
 
 -- Login sessions; only a hash of each token is stored
@@ -48,3 +50,17 @@ CREATE TABLE IF NOT EXISTS attempts (
 );
 
 CREATE INDEX IF NOT EXISTS attempts_ip_ts ON attempts (ip, ts);
+
+-- Paid plan state lives on the account; payments keep a record of each order
+CREATE TABLE IF NOT EXISTS payments (
+  order_id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  period TEXT NOT NULL,          -- month | year
+  amount INTEGER NOT NULL,       -- paise
+  status TEXT NOT NULL,          -- created | paid
+  payment_id TEXT,
+  created INTEGER NOT NULL,
+  paid INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS payments_user ON payments (username);

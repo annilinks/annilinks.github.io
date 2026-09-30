@@ -5,6 +5,8 @@ compatibility_date = "2026-09-01"
 [vars]
 ALLOWED_ORIGINS = "https://annilinks.github.io"
 OWNERS = "anish"          # site owner account: can see the admin list
+PRICE_MONTH = "9900"      # ₹99 a month, in paise
+PRICE_YEAR = "79900"      # ₹799 a year, in paise
 
 [[d1_databases]]
 binding = "DB"

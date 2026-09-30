@@ -29,3 +29,28 @@ last 90 days and only a hash of each session token is stored.
 
 The account named in the worker's `OWNERS` variable sees an **Admin** link in the
 footer: every account, its views and taps, and a switch to turn an account off.
+
+## Plans and payments
+
+Free accounts get 3 columns, 20 links and 7 days of stats, and their pages carry a small
+"Made with Linkboard" badge. **Pro** (one-time payment for a month or a year, no auto-renewal)
+raises that to 30 columns and 300 links, all-time stats with visitors by IP and a CSV download,
+custom column colours, a QR code, and no badge.
+
+Payments run through Razorpay. The worker only turns Pro on when it has verified Razorpay's
+signature, either from the browser (`/api/verify`) or from the webhook (`/razorpay/webhook`).
+
+To switch payments on, set these on the worker (they are never in this repo):
+
+```
+npx wrangler secret put RAZORPAY_KEY_ID
+npx wrangler secret put RAZORPAY_KEY_SECRET
+npx wrangler secret put RAZORPAY_WEBHOOK_SECRET
+```
+
+Then add a webhook in Razorpay for `payment.captured` pointing at
+`https://<your-worker>/razorpay/webhook`. Prices live in `wrangler.toml` as paise
+(`PRICE_MONTH`, `PRICE_YEAR`). Until the keys are set, the site simply says Pro can't be bought yet.
+
+Terms, privacy and the refund policy are in [`legal.html`](legal.html) — fill in your contact
+details there before taking payments.

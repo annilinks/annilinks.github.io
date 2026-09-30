@@ -255,6 +255,56 @@
     details.q[open] summary::after { content: "–"; }
     details.q p { color: var(--muted); font-size: .92rem; line-height: 1.65; margin-top: 10px; }
 
+    /* ---------------- pricing ---------------- */
+    .plans { margin-top: 34px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 820px; margin-inline: auto; }
+    .plan { border: 1px solid var(--line); border-radius: var(--r-xl); padding: 26px; background: var(--surface); box-shadow: var(--sh-1); }
+    .plan.best { border-color: #ddd6fe; box-shadow: var(--sh-2); position: relative; }
+    .plan .tag {
+      position: absolute; top: -12px; left: 26px;
+      background: var(--grad); color: #fff; font-size: .72rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 999px; letter-spacing: .02em;
+    }
+    .plan h3 { font-size: 1.05rem; font-weight: 700; }
+    .plan .price { font-size: 2.1rem; font-weight: 800; letter-spacing: -.03em; margin-top: 10px; }
+    .plan .price small { font-size: .9rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+    .plan .note { color: var(--muted); font-size: .82rem; margin-top: 4px; }
+    .plan ul { list-style: none; margin: 18px 0; display: grid; gap: 10px; }
+    .plan li { display: flex; gap: 10px; font-size: .9rem; color: var(--text-2); line-height: 1.45; }
+    .plan li::before { content: "✓"; color: var(--green); font-weight: 700; }
+    .plan li.off { color: var(--muted); }
+    .plan li.off::before { content: "–"; color: var(--muted); }
+    .period-toggle { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; }
+    .period-toggle button { border: 0; background: none; cursor: pointer; padding: 7px 16px; border-radius: 999px; font-weight: 600; font-size: .85rem; color: var(--muted); }
+    .period-toggle button.on { background: #fff; color: var(--text); box-shadow: var(--sh-1); }
+    .save-pill { font-size: .72rem; font-weight: 700; color: var(--green); background: #ecfdf5; border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
+
+    .pro-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .72rem; font-weight: 700; color: #fff;
+      background: var(--grad); padding: 3px 10px; border-radius: 999px;
+    }
+    .made-with {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin: 26px auto 0; padding: 7px 14px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--surface-2); color: var(--muted);
+      font-size: .8rem; text-decoration: none;
+    }
+    .made-with:hover { border-color: #ddd6fe; color: var(--brand); }
+    .made-with b { color: var(--text); font-weight: 700; }
+    .locked { display: inline-flex; align-items: center; gap: 6px; }
+    .upsell {
+      border: 1px dashed #ddd6fe; border-radius: var(--r-lg); padding: 22px;
+      background: var(--brand-soft); text-align: center; display: grid; gap: 12px; justify-items: center;
+    }
+    .upsell p { color: var(--text-2); font-size: .9rem; max-width: 46ch; }
+    .colour-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .colour-dot {
+      width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--line); cursor: pointer;
+    }
+    .colour-dot.on { box-shadow: 0 0 0 2px var(--text); }
+
     /* ---------------- a links page ---------------- */
     .wrap { max-width: var(--container); margin: 0 auto; padding: 8px 20px 40px; }
     .profile { text-align: center; padding: 40px 0 6px; }
@@ -681,6 +731,48 @@
       </div>
     </section>
 
+    <section class="section" id="pricing">
+      <div class="section-head">
+        <h2>Simple pricing</h2>
+        <p>Start free. Upgrade when your page starts working for you.</p>
+        <div style="margin-top:18px">
+          <span class="period-toggle" id="period-toggle" role="group" aria-label="Billing period">
+            <button type="button" data-period="month">Monthly</button>
+            <button type="button" data-period="year" class="on">Yearly<span class="save-pill" id="save-pill"></span></button>
+          </span>
+        </div>
+      </div>
+      <div class="plans">
+        <div class="plan">
+          <h3>Free</h3>
+          <div class="price">₹0</div>
+          <p class="note">Everything you need to share your links.</p>
+          <ul>
+            <li>Your own page with a short address</li>
+            <li>Up to 3 columns and 20 links</li>
+            <li>Descriptions, search and app-opening links</li>
+            <li>Last 7 days of stats</li>
+            <li class="off">Made with Linkboard badge stays</li>
+          </ul>
+          <a class="btn outline block" href="#auth-card">Start free</a>
+        </div>
+        <div class="plan best">
+          <span class="tag">PRO</span>
+          <h3>Pro</h3>
+          <div class="price" id="price-main">₹799<small> /year</small></div>
+          <p class="note" id="price-note">That's about ₹67 a month.</p>
+          <ul>
+            <li>Everything in Free</li>
+            <li>Up to 30 columns and 300 links</li>
+            <li>All-time stats, visitors by IP and CSV download</li>
+            <li>Your own colours for every column</li>
+            <li>No Linkboard badge · QR code for your page</li>
+          </ul>
+          <button class="btn primary block" id="btn-upgrade-hero" type="button">Get Pro</button>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="section-head">
         <h2>Questions</h2>
@@ -698,6 +790,11 @@
           <summary>What do the stats show?</summary>
           <p>Page views, visitors by IP address, every link with its taps and copies, where visitors came from,
              their country, device and browser, and the latest activity. Your own visits are not counted while you are logged in.</p>
+        </details>
+        <details class="q">
+          <summary>What does Pro cost, and can I stop?</summary>
+          <p>Pro is a one-time payment for a month or a year — there is no auto-renewal, so nothing is ever charged
+             without you choosing it again. When Pro runs out your page keeps working on the Free plan.</p>
         </details>
         <details class="q">
           <summary>Can I change my links later?</summary>
@@ -720,6 +817,7 @@
         <span class="chip" id="stat-links"></span>
         <span class="chip" id="stat-cols"></span>
         <button class="btn outline sm" id="btn-share" type="button">🔗 Copy link</button>
+        <button class="btn outline sm" id="btn-qr" type="button" hidden>📱 QR code</button>
       </div>
       <label class="search">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -729,6 +827,7 @@
 
     <main class="grid animate" id="grid"></main>
     <p class="empty" id="empty" hidden>No links found 🙈</p>
+    <div id="made-with-holder" style="text-align:center"></div>
   </div>
 
   <p class="loading" id="loading">Loading...</p>
@@ -749,6 +848,7 @@
     <div class="stats-top">
       <h2>📊 Stats</h2>
       <span class="spacer"></span>
+      <button class="btn ghost sm" id="stats-export" type="button">⬇ CSV</button>
       <button class="btn ghost sm" id="stats-refresh" type="button">↻ Refresh</button>
       <button class="btn ghost sm" id="stats-close" type="button">✕ Close</button>
     </div>
@@ -803,6 +903,13 @@
     let editing = false;
     let isOwnPage = false;
     let isSiteOwner = false;
+    let account = { plan: "free", planUntil: null, limits: { columns: 3, links: 20, statsDays: 7, visitorList: false, colours: false } };
+    let pageplan = "free";   // plan of the page being viewed, for the badge
+    let pricing = null;      // { enabled, month, year, currency }
+    let period = "year";
+
+    const isPro = () => account.plan === "pro";
+    const rupees = paise => "₹" + (paise / 100).toLocaleString("en-IN");
 
     // ---------- helpers ----------
     const el = (tag, cls, text) => {
@@ -1145,6 +1252,7 @@
       $("editbar").hidden = !editing;
       $("fab").hidden = editing || !isOwnPage;
       $("fab-stats").hidden = editing || !isOwnPage;
+      $("btn-qr").hidden = !isOwnPage;
       const dirty = isDirty();
       $("status").textContent = dirty ? "● Unsaved changes" : "No changes";
       $("status").classList.toggle("dirty", dirty);
@@ -1256,9 +1364,21 @@
       }
 
       grid.replaceChildren(frag);
+      renderBadge();
       $("stat-links").textContent = total + (total === 1 ? " link" : " links");
       $("stat-cols").textContent = data.columns.length + (data.columns.length === 1 ? " column" : " columns");
       filter($("q").value);
+    }
+
+    // Free pages carry a small badge; it is also how new people find Linkboard.
+    function renderBadge() {
+      const holder = $("made-with-holder");
+      holder.replaceChildren();
+      if (!viewing || pageplan === "pro") return;
+      const a = el("a", "made-with");
+      a.href = CONFIG.site;
+      a.append(document.createTextNode("Made with "), el("b", null, "Linkboard"));
+      holder.append(a);
     }
 
     function filter(q) {
@@ -1296,7 +1416,14 @@
     ];
     const checkUrl = v => (safeUrl(v.url) ? null : "That doesn't look like a valid link, e.g. https://instagram.com/username");
 
+    function linkCount() {
+      return data.columns.reduce((n, c) => n + c.links.length, 0);
+    }
+
     async function addLink(ci) {
+      if (isOwnPage && linkCount() >= account.limits.links) {
+        return askUpgrade(`Your plan holds ${account.limits.links} links. Pro raises that to 300.`);
+      }
       const v = await openForm({ title: "➕ New link", fields: linkFields({ title: "", url: "" }, ci), okText: "Add", onSubmit: checkUrl });
       if (!v) return;
       change(() => data.columns[+v.col].links.push({ title: v.title, url: safeUrl(v.url).href, description: v.description }));
@@ -1326,6 +1453,9 @@
     ];
 
     async function addColumn() {
+      if (isOwnPage && data.columns.length >= account.limits.columns) {
+        return askUpgrade(`Your plan holds ${account.limits.columns} columns. Pro raises that to 30.`);
+      }
       const v = await openForm({ title: "➕ New column", fields: columnFields({ name: "", icon: "⭐" }), okText: "Create" });
       if (!v) return;
       change(() => data.columns.push({ name: v.name, icon: v.icon || "🔗", links: [] }));
@@ -1333,9 +1463,40 @@
 
     async function editColumn(ci) {
       const col = data.columns[ci];
-      const v = await openForm({ title: "✏️ Edit column", fields: columnFields(col), okText: "Update" });
+      let picked = col.color || "";
+      const intro = el("div");
+      if (isPro()) {
+        intro.append(el("p", "muted small", "Colour"));
+        const row = el("div", "colour-row");
+        row.style.marginTop = "8px";
+        [""].concat(COLORS).forEach(c => {
+          const dot = el("button", "colour-dot" + (picked === c ? " on" : ""));
+          dot.type = "button";
+          dot.title = c || "Automatic";
+          dot.style.background = c || "linear-gradient(135deg,#ec4899,#8b5cf6)";
+          dot.addEventListener("click", () => {
+            picked = c;
+            row.querySelectorAll(".colour-dot").forEach(d => d.classList.remove("on"));
+            dot.classList.add("on");
+          });
+          row.append(dot);
+        });
+        intro.append(row);
+      } else {
+        const line = el("p", "muted small", "Colours are automatic on Free. ");
+        const b = el("button", "link-btn", "Choose your own with Pro");
+        b.type = "button";
+        b.addEventListener("click", () => askUpgrade("Picking your own column colours is part of Pro."));
+        line.append(b);
+        intro.append(line);
+      }
+      const v = await openForm({ title: "✏️ Edit column", intro, fields: columnFields(col), okText: "Update" });
       if (!v) return;
-      change(() => { col.name = v.name; col.icon = v.icon || "🔗"; });
+      change(() => {
+        col.name = v.name;
+        col.icon = v.icon || "🔗";
+        if (isPro()) { if (picked) col.color = picked; else delete col.color; }
+      });
     }
 
     async function deleteColumn(ci) {
@@ -1383,7 +1544,9 @@
         setEditing(false);
         toast("Saved ✅ Your page is updated", "good");
       } catch (e) {
-        if (!handleAuthError(e)) toast("Couldn't save: " + e.message, "bad");
+        if (handleAuthError(e)) return;
+        if (e.status === 400 && /plan allows/i.test(e.message)) askUpgrade(e.message);
+        else toast("Couldn't save: " + e.message, "bad");
       } finally {
         btn.disabled = false;
         btn.textContent = "💾 Save";
@@ -1470,6 +1633,7 @@
     function showLanding(prefill) {
       $("loading").hidden = true;
       $("landing").hidden = false;
+      loadPricing().then(showPricing);
       $("auth-prefix").textContent = CONFIG.site.replace(/^https?:\/\//, "") + "?u=";
       setAuthMode("signup");
       if (prefill) {
@@ -1509,6 +1673,14 @@
           admin.addEventListener("click", showAdmin);
           box.append(admin);
         }
+        if (!isPro()) {
+          const up = el("button", "btn primary sm", "✨ Get Pro");
+          up.type = "button";
+          up.addEventListener("click", () => askUpgrade());
+          box.append(up);
+        } else {
+          box.append(el("span", "pro-badge", "PRO"));
+        }
         box.append(el("span", "nav-user", "@" + session.username));
         const out = el("button", "btn ghost sm", "Log out");
         out.type = "button";
@@ -1544,11 +1716,13 @@
       }
 
       const right = el("div", "right");
-      const repo = el("a", null, "Open source on GitHub");
+      const legal = el("a", null, "Terms & privacy");
+      legal.href = CONFIG.site + "legal.html";
+      const repo = el("a", null, "GitHub");
       repo.href = "https://github.com/annilinks/annilinks.github.io";
       repo.target = "_blank";
       repo.rel = "noopener";
-      right.append(repo);
+      right.append(legal, repo);
       if (!session) {
         const make = el("a", null, "Create your page");
         make.href = CONFIG.site;
@@ -1592,6 +1766,160 @@
       });
       if (!out.users.length) box.append(el("p", "muted", "No accounts yet."));
       openForm({ title: `👥 ${out.users.length} account${out.users.length === 1 ? "" : "s"}`, intro: box, okText: "Done" });
+    }
+
+    // ---------- plans and payment ----------
+    async function loadPricing() {
+      if (pricing) return pricing;
+      try { pricing = await api("/api/plans"); } catch { pricing = null; }
+      return pricing;
+    }
+
+    function showPricing() {
+      if (!pricing) return;
+      const yearly = period === "year";
+      const amount = yearly ? pricing.year : pricing.month;
+      $("price-main").replaceChildren(
+        document.createTextNode(rupees(amount)),
+        el("small", null, yearly ? " /year" : " /month"),
+      );
+      const perMonth = Math.round(pricing.year / 12 / 100);
+      $("price-note").textContent = yearly
+        ? `That's about ₹${perMonth} a month.`
+        : "Pay for one month at a time.";
+      const saving = Math.max(0, Math.round(100 - (pricing.year / (pricing.month * 12)) * 100));
+      $("save-pill").textContent = saving ? "save " + saving + "%" : "";
+      $("period-toggle").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.period === period));
+    }
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const tag = document.createElement("script");
+        tag.src = src;
+        tag.onload = resolve;
+        tag.onerror = () => reject(new Error("Couldn't load " + src));
+        document.head.append(tag);
+      });
+    }
+
+    // Shown wherever a Free page runs into a Pro-only feature.
+    async function askUpgrade(reason) {
+      if (!session) { location.href = CONFIG.site; return; }
+      await loadPricing();
+      const body = el("div");
+      if (reason) body.append(el("p", null, reason));
+      const list = el("ul");
+      list.style.cssText = "margin:12px 0 0 18px;display:grid;gap:6px";
+      ["30 columns and 300 links", "All-time stats, visitors by IP and CSV download", "Your own colours", "No Linkboard badge and a QR code"]
+        .forEach(t => list.append(el("li", null, t)));
+      body.append(list);
+      if (!pricing || !pricing.enabled) {
+        body.append(el("p", "muted small", "Payments aren't switched on yet, so Pro can't be bought right now."));
+        await openForm({ title: "✨ Linkboard Pro", intro: body, okText: "Close" });
+        return;
+      }
+      const v = await openForm({
+        title: "✨ Linkboard Pro",
+        intro: body,
+        fields: [{
+          name: "period", label: "Plan", value: period,
+          options: [
+            { value: "year", label: "1 year — " + rupees(pricing.year) },
+            { value: "month", label: "1 month — " + rupees(pricing.month) },
+          ],
+        }],
+        okText: "Pay with Razorpay",
+      });
+      if (v) startPayment(v.period);
+    }
+
+    async function startPayment(chosen) {
+      let order;
+      try {
+        order = await api("/api/checkout", { method: "POST", body: { period: chosen } });
+      } catch (e) {
+        if (!handleAuthError(e)) toast(e.message, "bad");
+        return;
+      }
+      try {
+        await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+      } catch {
+        toast("Couldn't open the payment window. Check your connection.", "bad");
+        return;
+      }
+      const rzp = new Razorpay({
+        key: order.keyId,
+        order_id: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Linkboard",
+        description: chosen === "year" ? "Linkboard Pro — 1 year" : "Linkboard Pro — 1 month",
+        prefill: { name: session.display || session.username },
+        theme: { color: "#8b5cf6" },
+        handler: async response => {
+          try {
+            const out = await api("/api/verify", {
+              method: "POST",
+              body: {
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+              },
+            });
+            account = { plan: out.plan, planUntil: out.planUntil, limits: out.limits };
+            pageplan = isOwnPage ? out.plan : pageplan;
+            render();
+            renderFooter();
+            toast("You're on Pro now ✨ Thank you!", "good");
+          } catch (e) {
+            toast("Payment went through but couldn't be confirmed yet. It will switch on shortly.", "bad");
+          }
+        },
+      });
+      rzp.on("payment.failed", () => toast("Payment didn't go through.", "bad"));
+      rzp.open();
+    }
+
+    // QR code for your own page (Pro). The generator ships with the site, so nothing
+    // about your page is sent anywhere to draw it.
+    async function showQr() {
+      if (!isPro()) return askUpgrade("A QR code for your page is part of Pro.");
+      try { await loadScript(CONFIG.site + "qr.js"); }
+      catch { toast("Couldn't load the QR code tool.", "bad"); return; }
+
+      const url = pageUrl(viewing);
+      const code = qrcode(0, "M");
+      code.addData(url);
+      code.make();
+
+      const modules = code.getModuleCount();
+      const quiet = 4, scale = 8;
+      const size = (modules + quiet * 2) * scale;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = "#0f172a";
+      for (let row = 0; row < modules; row++) {
+        for (let col = 0; col < modules; col++) {
+          if (code.isDark(row, col)) ctx.fillRect((col + quiet) * scale, (row + quiet) * scale, scale, scale);
+        }
+      }
+      canvas.style.cssText = "width:240px;height:240px;border-radius:14px;border:1px solid var(--line)";
+
+      const box = el("div");
+      box.style.cssText = "display:grid;justify-items:center;gap:12px";
+      const save = el("button", "btn outline sm", "Download PNG");
+      save.type = "button";
+      save.addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = canvas.toDataURL("image/png");
+        a.download = viewing + "-linkboard-qr.png";
+        a.click();
+      });
+      box.append(canvas, el("p", "muted small", shortUrl(viewing)), save);
+      openForm({ title: "📱 Your QR code", intro: box, okText: "Done" });
     }
 
     // ---------- tracking ----------
@@ -1651,6 +1979,14 @@
     async function loadStats() {
       if (statsBusy) return;
       const box = $("stats-content");
+      // "All time" only needs Pro when the plan can't reach that far back.
+      const allowed = account.limits.statsDays;
+      const tooFar = statsDays === 0 ? allowed < 3650 : statsDays > allowed;
+      if (tooFar) {
+        statsDays = allowed;
+        $("ranges").querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.days === allowed));
+        askUpgrade("Stats older than " + allowed + " days are part of Pro.");
+      }
       statsBusy = true;
       box.classList.add("busy");
       if (!box.childElementCount) box.append(el("p", "empty-state", "Loading stats..."));
@@ -1740,6 +2076,7 @@
         rankCard("Operating systems", "Visitors", s.systems, "visitors"),
       );
       frag.append(breakdowns, recentCard(s.recent));
+      if (!isPro()) frag.append(proTeaser());
       $("stats-content").replaceChildren(frag);
     }
 
@@ -1910,8 +2247,49 @@
       return c;
     }
 
+    function proTeaser() {
+      const box = el("div", "upsell");
+      box.append(
+        el("h3", null, "✨ See more with Pro"),
+        el("p", null, "All-time stats, every visitor's IP with what they tapped, and a CSV download of everything."),
+      );
+      const b = el("button", "btn primary", "Get Pro");
+      b.type = "button";
+      b.addEventListener("click", () => askUpgrade());
+      box.append(b);
+      return box;
+    }
+
+    // Everything in the current range as one spreadsheet file (Pro).
+    function downloadCsv(s) {
+      const rows = [["Section", "Name", "Detail", "Views", "Visitors", "Taps", "Copies", "Last seen"]];
+      s.series.forEach(r => rows.push(["Day", r.bucket, "", r.views, r.visitors, r.clicks, "", ""]));
+      s.links.forEach(r => rows.push(["Link", r.title || "", r.url, "", r.people, r.clicks, r.copies, r.last ? new Date(r.last).toISOString() : ""]));
+      s.visitors.forEach(r => rows.push(["Visitor", r.ip, [r.city, r.country, r.device, r.browser].filter(Boolean).join(" / "), r.views, "", r.clicks, "", new Date(r.last).toISOString()]));
+      s.sources.forEach(r => rows.push(["Source", r.name || "Direct", "", r.views, "", "", "", ""]));
+      s.countries.forEach(r => rows.push(["Country", r.name || "Unknown", "", "", r.visitors, "", "", ""]));
+      const csv = rows.map(r => r.map(cell => {
+        const v = String(cell == null ? "" : cell);
+        return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      }).join(",")).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      a.download = `linkboard-${viewing}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
     function visitorsCard(rows) {
       const c = card("Visitors by IP", "How many times each IP address opened your page and what it tapped. Most active first.");
+      if (!isPro()) {
+        const b = el("button", "btn primary", "Get Pro");
+        b.type = "button";
+        b.addEventListener("click", () => askUpgrade("Seeing every visitor is part of Pro."));
+        const box = el("div", "upsell");
+        box.append(el("p", null, "Pro shows every visitor's IP address, where they were, what they tapped and when."), b);
+        c.append(box);
+        return c;
+      }
       if (!rows.length) { c.append(el("p", "empty-state", "No visitors in this range yet.")); return c; }
       c.append(table(
         [{ label: "IP address" }, { label: "Visits", cls: "num" }, { label: "Taps", cls: "num" }, { label: "Tapped links" }, { label: "Location" }, { label: "Device" }, { label: "First seen", cls: "nowrap" }, { label: "Last seen", cls: "nowrap" }],
@@ -2009,10 +2387,12 @@
         if (isOwnPage) {
           out = await api("/api/me");
           isSiteOwner = !!out.owner;
+          if (out.plan) account = { plan: out.plan, planUntil: out.planUntil, limits: out.limits };
           saveSession({ ...session, display: out.display });
         } else {
           out = await api("/api/page?u=" + encodeURIComponent(viewing));
         }
+        pageplan = out.plan || (isOwnPage ? account.plan : "free");
         data = normalize(out.page);
         savedJson = JSON.stringify(data);
         $("loading").hidden = true;
@@ -2051,6 +2431,17 @@
     $("title-box").addEventListener("click", () => editing && editHeader());
     $("auth-form").addEventListener("submit", submitAuth);
     $("auth-user").addEventListener("input", updateUrlPreview);
+    $("btn-qr").addEventListener("click", showQr);
+    $("btn-upgrade-hero").addEventListener("click", () => {
+      if (!session) { setAuthMode("signup"); $("auth-card").scrollIntoView({ behavior: "smooth", block: "center" }); $("auth-user").focus(); return; }
+      askUpgrade();
+    });
+    $("period-toggle").addEventListener("click", e => {
+      const b = e.target.closest("button[data-period]");
+      if (!b) return;
+      period = b.dataset.period;
+      showPricing();
+    });
     $("btn-share").addEventListener("click", async () => {
       const url = pageUrl(viewing);
       if (navigator.share) {
@@ -2062,6 +2453,10 @@
     $("fab-stats").addEventListener("click", openStats);
     $("stats-close").addEventListener("click", closeStats);
     $("stats-refresh").addEventListener("click", loadStats);
+    $("stats-export").addEventListener("click", () => {
+      if (!isPro()) return askUpgrade("Downloading your stats is part of Pro.");
+      if (lastStats) downloadCsv(lastStats);
+    });
     $("ranges").addEventListener("click", e => {
       const b = e.target.closest("button[data-days]");
       if (!b) return;

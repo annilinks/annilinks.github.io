@@ -10,6 +10,10 @@
 //   GET  /api/stats?days&tz    (session)                     -> stats for the caller's page
 //   GET  /api/admin/users      (owner session)               -> all accounts
 //   POST /api/admin/disable    (owner session) { username, disabled }
+//   GET  /api/plans                                          -> prices and whether payments are on
+//   POST /api/checkout         (session) { period }          -> a Razorpay order to pay for Pro
+//   POST /api/verify           (session) { orderId, paymentId, signature }
+//   POST /razorpay/webhook     (Razorpay) payment events
 //   POST /track                { page, type, title, url, ref }
 
 const DAY = 86400000;
@@ -19,6 +23,12 @@ const ITERATIONS = 100000;
 const MAX_PAGE_BYTES = 100000;
 const BOT_UA = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|discord|headless|lighthouse|curl|wget|python|axios|node-fetch/i;
 const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,29}$/;
+const DAY_MS = 86400000;
+// What each plan may do. Free is generous enough to be useful on its own.
+const LIMITS = {
+  free: { columns: 3, links: 20, statsDays: 7, visitorList: false, colours: false, badge: true },
+  pro: { columns: 30, links: 300, statsDays: 3650, visitorList: true, colours: true, badge: false },
+};
 const RESERVED = new Set([
   "api", "admin", "administrator", "www", "root", "support", "help", "about", "track", "stats",
   "login", "signup", "signin", "signout", "logout", "account", "settings", "user", "users", "me",
@@ -53,6 +63,10 @@ export default {
       if (path === "/api/stats" && method === "GET") return await stats(request, env, cors, url);
       if (path === "/api/admin/users" && method === "GET") return await adminUsers(request, env, cors);
       if (path === "/api/admin/disable" && method === "POST") return await adminDisable(request, env, cors);
+      if (path === "/api/plans" && method === "GET") return plans(env, cors);
+      if (path === "/api/checkout" && method === "POST") return await checkout(request, env, cors);
+      if (path === "/api/verify" && method === "POST") return await verifyPayment(request, env, cors);
+      if (path === "/razorpay/webhook" && method === "POST") return await webhook(request, env, cors);
       return json({ error: "Not found" }, 404, cors);
     } catch (e) {
       console.error(e);
@@ -83,7 +97,10 @@ async function signup(request, env, cors) {
     `INSERT INTO users (username, display, salt, hash, iterations, created, page) VALUES (?1,?2,?3,?4,?5,?6,?7)`
   ).bind(uname, name, salt, hash, ITERATIONS, Date.now(), JSON.stringify(page)).run();
 
-  return json({ token: await newSession(env, uname), username: uname, display: name, page }, 200, cors);
+  return json({
+    token: await newSession(env, uname), username: uname, display: name, page,
+    plan: "free", planUntil: null, limits: LIMITS.free,
+  }, 200, cors);
 }
 
 async function login(request, env, cors) {
@@ -100,7 +117,10 @@ async function login(request, env, cors) {
     return json({ error: "Wrong username or password." }, 401, cors);
   }
   if (user.disabled) return json({ error: "This account has been turned off." }, 403, cors);
-  return json({ token: await newSession(env, uname), username: uname, display: user.display, page: JSON.parse(user.page) }, 200, cors);
+  return json({
+    token: await newSession(env, uname), username: uname, display: user.display, page: JSON.parse(user.page),
+    ...accountInfo(user),
+  }, 200, cors);
 }
 
 async function logout(request, env, cors) {
@@ -112,7 +132,10 @@ async function logout(request, env, cors) {
 async function me(request, env, cors) {
   const user = await sessionUser(request, env);
   if (!user) return json({ error: "Not logged in" }, 401, cors);
-  return json({ username: user.username, display: user.display, page: JSON.parse(user.page), owner: isOwner(env, user.username) }, 200, cors);
+  return json({
+    username: user.username, display: user.display, page: JSON.parse(user.page),
+    owner: isOwner(env, user.username), ...accountInfo(user),
+  }, 200, cors);
 }
 
 async function changePassword(request, env, cors) {
@@ -134,6 +157,115 @@ async function changePassword(request, env, cors) {
   return json({ ok: true }, 200, cors);
 }
 
+// ---------- plans ----------
+
+function planOf(user) {
+  return user && user.plan === "pro" && (user.plan_until || 0) > Date.now() ? "pro" : "free";
+}
+
+function accountInfo(user) {
+  const plan = planOf(user);
+  return { plan, planUntil: plan === "pro" ? user.plan_until : null, limits: LIMITS[plan] };
+}
+
+function plans(env, cors) {
+  return json({
+    enabled: !!(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
+    currency: "INR",
+    month: Number(env.PRICE_MONTH || 9900),
+    year: Number(env.PRICE_YEAR || 79900),
+    limits: LIMITS,
+  }, 200, cors);
+}
+
+async function checkout(request, env, cors) {
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: "Not logged in" }, 401, cors);
+  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+    return json({ error: "Payments aren't switched on yet." }, 503, cors);
+  }
+  const { period = "month" } = await body(request);
+  if (!["month", "year"].includes(period)) return json({ error: "Unknown plan" }, 400, cors);
+  const amount = Number(period === "year" ? env.PRICE_YEAR || 79900 : env.PRICE_MONTH || 9900);
+
+  const res = await fetch("https://api.razorpay.com/v1/orders", {
+    method: "POST",
+    headers: {
+      Authorization: "Basic " + btoa(env.RAZORPAY_KEY_ID + ":" + env.RAZORPAY_KEY_SECRET),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount, currency: "INR",
+      receipt: ("lb_" + user.username + "_" + Date.now()).slice(0, 40),
+      notes: { username: user.username, period },
+    }),
+  });
+  const order = await res.json().catch(() => ({}));
+  if (!res.ok || !order.id) {
+    console.error("razorpay order failed", res.status, order);
+    return json({ error: "Couldn't start the payment. Please try again." }, 502, cors);
+  }
+  await env.DB.prepare(
+    `INSERT INTO payments (order_id, username, period, amount, status, created) VALUES (?1,?2,?3,?4,'created',?5)`
+  ).bind(order.id, user.username, period, amount, Date.now()).run();
+
+  return json({ orderId: order.id, amount, currency: "INR", keyId: env.RAZORPAY_KEY_ID }, 200, cors);
+}
+
+async function verifyPayment(request, env, cors) {
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: "Not logged in" }, 401, cors);
+  const { orderId = "", paymentId = "", signature = "" } = await body(request);
+  const expected = await hmacHex(env.RAZORPAY_KEY_SECRET || "", orderId + "|" + paymentId);
+  if (!expected || expected !== String(signature)) return json({ error: "Payment couldn't be verified." }, 400, cors);
+  const row = await activate(env, orderId, paymentId);
+  if (!row) return json({ error: "That payment doesn't match an order." }, 400, cors);
+  const fresh = await env.DB.prepare("SELECT * FROM users WHERE username = ?1").bind(row.username).first();
+  return json({ ok: true, ...accountInfo(fresh) }, 200, cors);
+}
+
+// Razorpay also tells us about the payment directly, in case the browser never came back.
+async function webhook(request, env, cors) {
+  const raw = await request.text();
+  const signature = request.headers.get("X-Razorpay-Signature") || "";
+  const expected = await hmacHex(env.RAZORPAY_WEBHOOK_SECRET || "", raw);
+  if (!expected || expected !== signature) return json({ error: "Bad signature" }, 400, cors);
+  let event = {};
+  try { event = JSON.parse(raw); } catch {}
+  const payment = event && event.payload && event.payload.payment && event.payload.payment.entity;
+  if (event.event === "payment.captured" && payment && payment.order_id) {
+    await activate(env, payment.order_id, payment.id);
+  }
+  return json({ ok: true }, 200, cors);
+}
+
+// Turns a paid order into Pro time. Running it twice does nothing the second time.
+async function activate(env, orderId, paymentId) {
+  const row = await env.DB.prepare("SELECT * FROM payments WHERE order_id = ?1").bind(orderId).first();
+  if (!row) return null;
+  if (row.status === "paid") return row;
+
+  const user = await env.DB.prepare("SELECT * FROM users WHERE username = ?1").bind(row.username).first();
+  if (!user) return null;
+  const days = row.period === "year" ? 366 : 31;
+  const from = Math.max(Date.now(), user.plan_until || 0);
+  const until = from + days * DAY_MS;
+  await env.DB.batch([
+    env.DB.prepare("UPDATE users SET plan = 'pro', plan_until = ?2 WHERE username = ?1").bind(row.username, until),
+    env.DB.prepare("UPDATE payments SET status = 'paid', payment_id = ?2, paid = ?3 WHERE order_id = ?1")
+      .bind(orderId, paymentId, Date.now()),
+  ]);
+  return row;
+}
+
+async function hmacHex(secret, message) {
+  if (!secret) return null;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ---------- pages ----------
 
 function starterPage(name) {
@@ -150,40 +282,50 @@ function starterPage(name) {
 async function publicPage(url, env, cors) {
   const uname = String(url.searchParams.get("u") || "").trim().toLowerCase();
   if (!USERNAME_RE.test(uname)) return json({ error: "No such page" }, 404, cors);
-  const row = await env.DB.prepare("SELECT display, page, disabled FROM users WHERE username = ?1").bind(uname).first();
+  const row = await env.DB.prepare("SELECT display, page, disabled, plan, plan_until FROM users WHERE username = ?1").bind(uname).first();
   if (!row || row.disabled) return json({ error: "No such page" }, 404, cors);
-  return json({ username: uname, display: row.display, page: JSON.parse(row.page) }, 200, cors);
+  return json({ username: uname, display: row.display, page: JSON.parse(row.page), plan: planOf(row) }, 200, cors);
 }
 
 async function savePage(request, env, cors) {
   const user = await sessionUser(request, env);
   if (!user) return json({ error: "Not logged in" }, 401, cors);
-  const clean = cleanPage(await body(request));
-  if (clean.error) return json({ error: clean.error }, 400, cors);
+  const plan = planOf(user);
+  const clean = cleanPage(await body(request), LIMITS[plan]);
+  if (clean.error) return json({ error: clean.error, upgrade: plan === "free" }, 400, cors);
   const text = JSON.stringify(clean.page);
   if (text.length > MAX_PAGE_BYTES) return json({ error: "That's too much for one page." }, 413, cors);
   await env.DB.prepare("UPDATE users SET page = ?2 WHERE username = ?1").bind(user.username, text).run();
   return json({ ok: true, page: clean.page }, 200, cors);
 }
 
-function cleanPage(input) {
+function cleanPage(input, limits) {
   if (!input || typeof input !== "object") return { error: "Nothing to save." };
   const columns = Array.isArray(input.columns) ? input.columns : [];
-  if (columns.length > 30) return { error: "Too many columns (30 max)." };
+  if (columns.length > limits.columns) {
+    return { error: `Your plan allows ${limits.columns} columns.` };
+  }
   const page = {
     title: str(input.title, 80) || "My Links",
     subtitle: str(input.subtitle, 160),
-    columns: columns.map(c => ({
-      name: str(c && c.name, 60) || "Column",
-      icon: str(c && c.icon, 12) || "🔗",
-      links: (Array.isArray(c && c.links) ? c.links : []).slice(0, 100).map(l => {
-        const link = { title: str(l && l.title, 120) || "Link", url: safeUrl(l && l.url) };
-        const description = str(l && l.description, 200).trim();
-        if (description) link.description = description;
-        return link;
-      }).filter(l => l.url),
-    })),
+    columns: columns.map(c => {
+      const column = {
+        name: str(c && c.name, 60) || "Column",
+        icon: str(c && c.icon, 12) || "🔗",
+        links: (Array.isArray(c && c.links) ? c.links : []).slice(0, 100).map(l => {
+          const link = { title: str(l && l.title, 120) || "Link", url: safeUrl(l && l.url) };
+          const description = str(l && l.description, 200).trim();
+          if (description) link.description = description;
+          return link;
+        }).filter(l => l.url),
+      };
+      const colour = str(c && c.color, 20).trim();
+      if (limits.colours && /^#[0-9a-f]{6}$/i.test(colour)) column.color = colour;
+      return column;
+    }),
   };
+  const links = page.columns.reduce((n, c) => n + c.links.length, 0);
+  if (links > limits.links) return { error: `Your plan allows ${limits.links} links.` };
   return { page };
 }
 
@@ -282,7 +424,13 @@ async function stats(request, env, cors, url) {
   const user = await sessionUser(request, env);
   if (!user) return json({ error: "Not logged in" }, 401, cors);
 
-  const days = clampInt(url.searchParams.get("days"), 0, 3650, 7); // 0 = all time
+  const plan = planOf(user);
+  const limits = LIMITS[plan];
+  let days = clampInt(url.searchParams.get("days"), 0, 3650, 7); // 0 = all time
+  const wanted = days;
+  if (days === 0 || days > limits.statsDays) days = limits.statsDays;
+  // "All time" is only a limit when the plan can't reach that far back.
+  const limited = wanted === 0 ? limits.statsDays < 3650 : wanted > limits.statsDays;
   const tz = clampInt(url.searchParams.get("tz"), -840, 840, 0);   // Date#getTimezoneOffset()
   const shift = tz * 60;
   const since = days ? startOfLocalDay(Date.now(), tz) - (days - 1) * DAY : 0;
@@ -318,11 +466,12 @@ async function stats(request, env, cors, url) {
   ]);
 
   return json({
+    plan, limited, limits,
     range: { days, since, until: Date.now(), hourly, firstEvent: first.results[0] ? first.results[0].first : null },
     totals: totals.results[0],
     series: series.results,
     links: links.results,
-    visitors: visitors.results,
+    visitors: limits.visitorList ? visitors.results : [],
     sources: sources.results,
     countries: countries.results,
     devices: devices.results,
@@ -342,7 +491,7 @@ async function adminUsers(request, env, cors) {
   const user = await sessionUser(request, env);
   if (!user || !isOwner(env, user.username)) return json({ error: "Not allowed" }, 403, cors);
   const { results } = await env.DB.prepare(
-    `SELECT u.username, u.display, u.created, u.disabled,
+    `SELECT u.username, u.display, u.created, u.disabled, u.plan, u.plan_until,
             (SELECT COUNT(*) FROM events e WHERE e.page = u.username AND e.type = 'view') AS views,
             (SELECT COUNT(*) FROM events e WHERE e.page = u.username AND e.type = 'click') AS clicks
      FROM users u ORDER BY u.created DESC LIMIT 500`
